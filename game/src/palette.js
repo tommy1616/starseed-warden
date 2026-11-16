@@ -1,0 +1,48 @@
+// The nocturnal garden's colours in one place. The player and allies are bioluminescent
+// cyan/mint; the Starseed and pollen are warm gold; the Hollow is magenta, violet and ink.
+export const COLORS = {
+  night: '#070a17',
+  deep: '#0a1230',
+  sky: '#10204a',
+  mist: '#173049',
+  ink: '#140a22',
+  grass: '#12303a',
+  grassLit: '#1d4a4a',
+  text: '#eafff8',
+  muted: '#8fb6c6',
+  dim: '#5b7f92',
+  panel: 'rgba(8, 18, 34, 0.82)',
+  panelEdge: 'rgba(126, 232, 255, 0.28)',
+  panelEdgeHot: 'rgba(255, 215, 106, 0.55)',
+  player: '#7ef7e0',
+  playerCore: '#eafff8',
+  playerGlow: 'rgba(80, 255, 220, 0.55)',
+  dart: '#a9ffe8',
+  petal: '#8ff7c8',
+  seed: '#ffd76a',
+  seedHot: '#fff3c4',
+  seedGlow: 'rgba(255, 196, 74, 0.55)',
+  pollen: '#ffcf5a',
+  bloom: '#b6ffe6',
+  enemy: '#e05aff',
+  enemyDark: '#3d1150',
+  enemyLight: '#ff9bf0',
+  thorn: '#a44bf0',
+  shadow: '#1b0b2c',
+  danger: '#ff5b4a',
+  dangerSoft: 'rgba(255, 91, 74, 0.32)',
+  ember: '#ff9a3c',
+  common: '#78f0b8',
+  rare: '#7ec8ff',
+  legendary: '#ffd76a',
+  hp: '#ff6b8a',
+  hpBack: 'rgba(255, 107, 138, 0.18)',
+  star: '#ffe9a8',
+};
+
+/** Rarity border, glow and label colour. */
+export const RARITY = {
+  common: { color: COLORS.common, glow: 'rgba(120, 240, 184, 0.35)', label: 'Common' },
+  rare: { color: COLORS.rare, glow: 'rgba(126, 200, 255, 0.42)', label: 'Rare' },
+  legendary: { color: COLORS.legendary, glow: 'rgba(255, 215, 106, 0.5)', label: 'Legendary' },
+};
