@@ -75,44 +75,52 @@ function drawBuildSummary(ctx, app, y) {
   const cards = world ? ownedCards(world) : [];
   const cx = FIELD.width / 2;
   ctx.save();
-  ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.font = '700 10px system-ui, sans-serif';
-  ctx.fillStyle = 'rgba(143,182,198,0.72)';
-  ctx.fillText(`BLOOMS TAKEN  ·  ${results.upgradesTaken}`, cx, y);
+
+  const caption = `BLOOMS TAKEN · ${results.upgradesTaken}`;
+  ctx.font = '800 10px system-ui, sans-serif';
+  const captionWidth = ctx.measureText(caption).width;
+  const shown = cards.slice(0, 16);
+  const size = 24;
+  const gap = 5;
+  const iconsWidth = shown.length > 0 ? shown.length * size + (shown.length - 1) * gap : 0;
+  const groupWidth = captionWidth + (iconsWidth > 0 ? 14 + iconsWidth : 0);
+  let x = cx - groupWidth / 2;
+
+  ctx.textAlign = 'right';
+  ctx.fillStyle = 'rgba(143,182,198,0.82)';
+  ctx.fillText(caption, x + captionWidth, y);
   if (cards.length === 0) {
+    ctx.textAlign = 'left';
     ctx.font = '600 11px system-ui, sans-serif';
     ctx.fillStyle = 'rgba(143,182,198,0.5)';
-    ctx.fillText('NO BLOOMS GATHERED', cx, y + 18);
+    ctx.fillText('NONE GATHERED', x + captionWidth + 14, y);
     ctx.restore();
     return;
   }
-  const shown = cards.slice(0, 16);
-  const size = 22;
-  const gap = 5;
-  const total = shown.length * size + (shown.length - 1) * gap;
-  let x = cx - total / 2;
+
+  let iconX = x + captionWidth + 14;
+  const iconY = y - size / 2;
   for (const { card, level } of shown) {
     const rarity = RARITY[card.rarity];
-    roundedRect(ctx, x, y + 8, size, size, 6);
-    ctx.fillStyle = 'rgba(5,14,28,0.9)';
+    roundedRect(ctx, iconX, iconY, size, size, 6);
+    ctx.fillStyle = 'rgba(5,14,28,0.92)';
     ctx.fill();
     ctx.strokeStyle = rarity.color;
     ctx.lineWidth = 1.1;
     ctx.stroke();
-    drawUpgradeIcon(ctx, card.icon, x + size / 2, y + 8 + size / 2 - 1, 14, rarity.color, app.ui.time);
+    drawUpgradeIcon(ctx, card.icon, iconX + size / 2, iconY + size / 2 - 1, 15, rarity.color, app.ui.time);
     if (level > 1) {
       ctx.fillStyle = '#ffeeb8';
       ctx.beginPath();
-      ctx.arc(x + size - 4, y + size + 4, 5.5, 0, Math.PI * 2);
+      ctx.arc(iconX + size - 4, iconY + size - 4, 5.5, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = '#172026';
       ctx.font = '800 7px system-ui, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(String(level), x + size - 4, y + size + 5);
-      ctx.textAlign = 'center';
+      ctx.fillText(String(level), iconX + size - 4, iconY + size - 3);
     }
-    x += size + gap;
+    iconX += size + gap;
   }
   ctx.restore();
 }
@@ -182,7 +190,7 @@ export function drawResults(ctx, app) {
   ctx.save();
   ctx.globalAlpha = appear;
   drawStats(ctx, app, 280, 258, 720, 214);
-  drawBuildSummary(ctx, app, 486);
+  drawBuildSummary(ctx, app, 500);
   ctx.restore();
 
   clearButtons(app.ui);

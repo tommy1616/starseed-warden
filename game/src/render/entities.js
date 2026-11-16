@@ -495,18 +495,28 @@ function drawWarden(ctx, world, options = {}) {
   ctx.restore();
 
   if (mods.orbit > 0) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(143,247,200,0.14)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 9]);
+    ctx.lineDashOffset = -time * 20;
+    ctx.beginPath();
+    ctx.arc(0, 0, 70, 0, TAU);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
     for (let i = 0; i < mods.orbit; i += 1) {
       const angle = warden.orbitAngle + (i / mods.orbit) * TAU;
-      const px = Math.cos(angle) * 56;
-      const py = Math.sin(angle) * 56;
+      const px = Math.cos(angle) * 70;
+      const py = Math.sin(angle) * 70;
       ctx.save();
       ctx.translate(px, py);
       ctx.rotate(angle + time * 2);
-      ctx.fillStyle = 'rgba(143,247,200,0.9)';
+      ctx.fillStyle = 'rgba(170,255,214,0.98)';
       ctx.beginPath();
-      ctx.ellipse(0, 0, 9, 4.5, 0, 0, TAU);
+      ctx.ellipse(0, 0, 12, 6, 0, 0, TAU);
       ctx.fill();
-      glow(ctx, 0, 0, 13, 'rgba(143,247,200,0.25)');
+      glow(ctx, 0, 0, 16, 'rgba(143,247,200,0.32)');
       ctx.restore();
     }
   }
@@ -521,8 +531,8 @@ function drawWarden(ctx, world, options = {}) {
     const reach = Math.min(300, alen);
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
-    ctx.strokeStyle = 'rgba(126,247,224,0.18)';
-    ctx.lineWidth = 1.4;
+    ctx.strokeStyle = 'rgba(126,247,224,0.3)';
+    ctx.lineWidth = 1.6;
     ctx.setLineDash([7, 11]);
     ctx.lineDashOffset = -time * 26;
     ctx.beginPath();

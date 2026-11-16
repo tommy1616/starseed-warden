@@ -56,20 +56,54 @@ export function burst(particles, rng, x, y, color, count, options = {}) {
   }
 }
 
-export function addNumber(particles, x, y, text, color, size = 18) {
-  // A deterministic jitter (not Math.random) so a seeded shot frame always looks the same.
+export function addNumber(particles, x, y, text, color, size = 18, options = {}) {
+  const mergeKey = options.key ?? null;
+  const amount = Number.isFinite(options.amount) ? options.amount : null;
+  const crit = Boolean(options.crit);
+  const mergeWindow = options.mergeWindow ?? 0.7;
+
+  // Rapid hits on the same creature fold into one growing number instead of a vertical stack.
+  if (mergeKey !== null) {
+    for (let i = particles.numbers.length - 1; i >= 0; i -= 1) {
+      const existing = particles.numbers[i];
+      if (existing.mergeKey !== mergeKey || existing.age > mergeWindow || existing.life <= 0) continue;
+      existing.amount = (existing.amount ?? 0) + (amount ?? 0);
+      existing.crit = existing.crit || crit;
+      existing.text = existing.amount > 0 ? `${Math.round(existing.amount)}${existing.crit ? '!' : ''}` : String(text);
+      existing.color = existing.crit ? '#ffe28a' : existing.color;
+      existing.size = Math.min(31, existing.size + 1.7);
+      existing.life = existing.maxLife;
+      existing.age = 0;
+      existing.x = x + (existing.jitterX ?? 0) * 0.45;
+      existing.y = y + (existing.jitterY ?? 0);
+      existing.vx = (existing.jitterX ?? 0) * 26;
+      existing.vy = -44;
+      return;
+    }
+  }
+
+  // Deterministic jitter (not Math.random), so a seeded shot frame always looks the same.
   particles.numberPhase = (particles.numberPhase + 1) % 997;
   const jitter = Math.sin(particles.numberPhase * 12.9898) * 0.5;
-  particles.numbers.push({
-    x, y,
-    vy: -46 - jitter * 4,
-    vx: jitter * 16,
+  const stagger = ((particles.numberPhase % 5) - 2) * 3.5;
+  const entry = {
+    x: x + jitter * 30,
+    y: y + stagger,
+    vy: -46 - Math.abs(jitter) * 8,
+    vx: jitter * 24,
     text: String(text),
     color,
     size,
     life: 0.7,
     maxLife: 0.7,
-  });
+    age: 0,
+    mergeKey,
+    amount,
+    crit,
+    jitterX: jitter,
+    jitterY: stagger,
+  };
+  particles.numbers.push(entry);
   if (particles.numbers.length > 80) particles.numbers.shift();
 }
 
@@ -111,6 +145,7 @@ export function updateParticles(particles, dt) {
   for (let i = 0; i < nums.length; i += 1) {
     const n = nums[i];
     n.life -= dt;
+    n.age = (n.age ?? 0) + dt;
     if (n.life <= 0) continue;
     n.y += n.vy * dt;
     n.x += n.vx * dt;

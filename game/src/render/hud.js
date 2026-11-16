@@ -62,7 +62,7 @@ function drawWardenPanel(ctx, world) {
   const y = 14;
   const w = 318;
   const h = 72;
-  panel(ctx, x, y, w, h, { fill: 'rgba(6,16,28,0.82)', edge: 'rgba(126,232,255,0.22)', radius: 14 });
+  panel(ctx, x, y, w, h, { fill: 'rgba(6,16,28,0.94)', edge: 'rgba(126,232,255,0.22)', radius: 14 });
   heart(ctx, x + 24, y + 27, 20, COLORS.hp);
   label(ctx, 'WARDEN', x + 42, y + 20, 13, 'rgba(234,255,248,0.75)', 'left', 800);
   const fraction = warden.hp / warden.maxHp;
@@ -96,7 +96,7 @@ function drawSeedPanel(ctx, world) {
   const y = 14;
   const w = 416;
   const h = 72;
-  panel(ctx, x, y, w, h, { fill: 'rgba(6,16,28,0.82)', edge: 'rgba(255,215,106,0.28)', radius: 14 });
+  panel(ctx, x, y, w, h, { fill: 'rgba(6,16,28,0.94)', edge: 'rgba(255,215,106,0.28)', radius: 14 });
   ctx.save();
   ctx.fillStyle = '#ffd76a';
   ctx.beginPath();
@@ -126,7 +126,7 @@ function drawWavePanel(ctx, world) {
   const y = 14;
   const w = 326;
   const h = 72;
-  panel(ctx, x, y, w, h, { fill: 'rgba(6,16,28,0.82)', edge: 'rgba(126,232,255,0.22)', radius: 14 });
+  panel(ctx, x, y, w, h, { fill: 'rgba(6,16,28,0.94)', edge: 'rgba(126,232,255,0.22)', radius: 14 });
   const biome = BIOMES[world.biomeIndex] ?? BIOMES[0];
   label(ctx, `WAVE ${world.wave} / 12`, x + 18, y + 18, 16, '#eafff8', 'left', 800);
   label(ctx, biome.name.toUpperCase(), x + 18, y + 36, 10, biome.accent, 'left', 700);
@@ -155,7 +155,7 @@ function drawBloomAndDash(ctx, world) {
   const y = FIELD.height - 72;
   const w = 320;
   const h = 54;
-  panel(ctx, x, y, w, h, { fill: 'rgba(6,16,28,0.84)', edge: 'rgba(126,232,255,0.22)', radius: 14 });
+  panel(ctx, x, y, w, h, { fill: 'rgba(6,16,28,0.92)', edge: 'rgba(126,232,255,0.22)', radius: 14 });
   const fraction = warden.bloom / PLAYER.bloomMax;
   const full = fraction >= 1;
   label(ctx, full ? 'BLOOM READY — E / RIGHT CLICK' : 'BLOOM', x + 18, y + 17, 11, full ? '#ffeeb8' : 'rgba(143,182,198,0.9)', 'left', 800);
@@ -233,7 +233,7 @@ function drawBossBar(ctx, world) {
   const w = 720;
   const x = (FIELD.width - w) / 2;
   const y = 92;
-  panel(ctx, x, y, w, 52, { fill: 'rgba(10,6,20,0.9)', edge: 'rgba(255,91,74,0.42)', radius: 13 });
+  panel(ctx, x, y, w, 52, { fill: 'rgba(10,6,20,0.95)', edge: 'rgba(255,91,74,0.42)', radius: 13 });
   label(ctx, boss.name.toUpperCase(), x + 20, y + 17, 14, '#ffeeb8', 'left', 800);
   if (boss.type === 'crown') {
     label(ctx, 'PHASE', x + w - 78, y + 17, 9, 'rgba(255,155,240,0.75)', 'right', 700);

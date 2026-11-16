@@ -59,7 +59,7 @@ export function hurtStarseed(world, amount) {
 
 export function damageEnemy(world, enemy, amount, options = {}) {
   if (!enemy || enemy.dead || enemy.burrowed) return 0;
-  const damage = Math.max(1, amount);
+  const damage = Math.max(1, Math.round(amount));
   enemy.hp -= damage;
   enemy.hitFlash = 0.12;
   if (options.slow) {
@@ -70,11 +70,12 @@ export function damageEnemy(world, enemy, amount, options = {}) {
     const crit = Boolean(options.crit);
     addNumber(
       world.particles,
-      enemy.x + (world.rng.next() - 0.5) * 12,
+      enemy.x,
       enemy.y - enemy.r - 6,
       crit ? `${damage}!` : `${damage}`,
       crit ? '#ffe28a' : '#e9fff8',
       crit ? 22 : 15,
+      { key: enemy.id, amount: damage, crit },
     );
     burst(world.particles, world.rng, enemy.x, enemy.y, crit ? '#ffe28a' : enemy.glow ?? '#e05aff', crit ? 9 : 4, {
       speed: crit ? 210 : 120,

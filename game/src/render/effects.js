@@ -9,26 +9,53 @@ export function drawHazards(ctx, world) {
   for (const hazard of world.hazards) {
     if (hazard.type === 'beam') {
       const charging = hazard.delay > 0;
-      const alpha = charging ? 0.25 + 0.35 * (1 - hazard.delay / 0.95) : 0.85;
+      const pulse = 0.5 + 0.5 * Math.sin(world.time * 18);
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
-      ctx.strokeStyle = `rgba(255,91,74,${charging ? alpha * 0.55 : alpha})`;
-      ctx.lineWidth = charging ? 3 : hazard.width;
       ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.moveTo(hazard.x, hazard.y);
-      ctx.lineTo(hazard.x2, hazard.y2);
-      ctx.stroke();
       if (charging) {
-        ctx.strokeStyle = 'rgba(255,231,168,0.8)';
-        ctx.lineWidth = 1.4;
-        ctx.setLineDash([12, 12]);
-        ctx.lineDashOffset = -world.time * 40;
+        ctx.strokeStyle = 'rgba(255,91,74,0.06)';
+        ctx.lineWidth = 9;
+        ctx.beginPath();
+        ctx.moveTo(hazard.x, hazard.y);
+        ctx.lineTo(hazard.x2, hazard.y2);
+        ctx.stroke();
+        ctx.strokeStyle = `rgba(255,91,74,${0.38 + 0.35 * pulse})`;
+        ctx.lineWidth = 1.5 + pulse * 0.8;
+        ctx.beginPath();
+        ctx.moveTo(hazard.x, hazard.y);
+        ctx.lineTo(hazard.x2, hazard.y2);
+        ctx.stroke();
+        ctx.strokeStyle = 'rgba(255,170,120,0.9)';
+        ctx.lineWidth = 1.1;
+        ctx.setLineDash([6, 13]);
+        ctx.lineDashOffset = -world.time * 52;
         ctx.beginPath();
         ctx.moveTo(hazard.x, hazard.y);
         ctx.lineTo(hazard.x2, hazard.y2);
         ctx.stroke();
         ctx.setLineDash([]);
+        const warningPulse = 14 + pulse * 5;
+        ctx.strokeStyle = `rgba(255,91,74,${0.24 + 0.24 * pulse})`;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(hazard.x2, hazard.y2, warningPulse, 0, TAU);
+        ctx.stroke();
+        ctx.fillStyle = `rgba(255,91,74,${0.55 + 0.35 * pulse})`;
+        ctx.beginPath();
+        ctx.moveTo(hazard.x2, hazard.y2 - 5);
+        ctx.lineTo(hazard.x2 + 5, hazard.y2);
+        ctx.lineTo(hazard.x2, hazard.y2 + 5);
+        ctx.lineTo(hazard.x2 - 5, hazard.y2);
+        ctx.closePath();
+        ctx.fill();
+      } else {
+        ctx.strokeStyle = 'rgba(255,91,74,0.9)';
+        ctx.lineWidth = hazard.width;
+        ctx.beginPath();
+        ctx.moveTo(hazard.x, hazard.y);
+        ctx.lineTo(hazard.x2, hazard.y2);
+        ctx.stroke();
       }
       ctx.restore();
     } else if (hazard.delay > 0) {
@@ -157,21 +184,21 @@ export function drawReticle(ctx, world) {
   if (!Number.isFinite(x) || !Number.isFinite(y) || x < 0 || x > FIELD.width || y < 0 || y > FIELD.height) return;
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
-  ctx.strokeStyle = 'rgba(182,255,230,0.8)';
-  ctx.fillStyle = 'rgba(234,255,248,0.9)';
-  ctx.lineWidth = 1.4;
+  ctx.strokeStyle = 'rgba(182,255,230,0.92)';
+  ctx.fillStyle = 'rgba(234,255,248,0.95)';
+  ctx.lineWidth = 1.7;
   ctx.beginPath();
-  ctx.arc(x, y, 9, 0, TAU);
+  ctx.arc(x, y, 11, 0, TAU);
   ctx.stroke();
   for (let i = 0; i < 4; i += 1) {
     const angle = (i / 4) * TAU + world.time * 0.4;
     ctx.beginPath();
-    ctx.moveTo(x + Math.cos(angle) * 12, y + Math.sin(angle) * 12);
-    ctx.lineTo(x + Math.cos(angle) * 18, y + Math.sin(angle) * 18);
+    ctx.moveTo(x + Math.cos(angle) * 14, y + Math.sin(angle) * 14);
+    ctx.lineTo(x + Math.cos(angle) * 21, y + Math.sin(angle) * 21);
     ctx.stroke();
   }
   ctx.beginPath();
-  ctx.arc(x, y, 1.8, 0, TAU);
+  ctx.arc(x, y, 2.1, 0, TAU);
   ctx.fill();
   ctx.restore();
 }

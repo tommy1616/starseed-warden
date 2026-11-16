@@ -320,7 +320,9 @@ function stageDraft(app) {
 
 function stageBoss(app) {
   prepareWorld(app);
-  applyCards(app.world, ['spread', 'rapid', 'pierce', 'crit', 'homing', 'magnet', 'vitality']);
+  applyCards(app.world, [
+    'spread', 'rapid', 'pierce', 'crit', 'homing', 'magnet', 'vitality', 'orbit', 'orbit', 'thorn',
+  ]);
   const world = app.world;
   world.wave = 12;
   world.biomeIndex = 2;
@@ -328,40 +330,76 @@ function stageBoss(app) {
   world.spawnQueue = [];
   world.pendingBoss = null;
   world.bannerTimer = 0;
-  world.runTime = 418;
-  const boss = createBoss(world, 'crown');
-  boss.state = 'idle';
-  boss.attackTimer = 999;
-  stepWorld(app, 0.9, { keepAlive: true });
+  world.runTime = 423;
 
-  // Compose the frame deliberately: the Warden low and centred, firing up at the Crown.
+  const boss = createBoss(world, 'crown');
   boss.x = 640;
   boss.y = 238;
   boss.state = 'idle';
   boss.attackTimer = 999;
-  world.warden.x = 640;
-  world.warden.y = 584;
-  world.warden.aimX = boss.x;
-  world.warden.aimY = boss.y;
-  world.warden.aimAngle = -Math.PI / 2;
-  world.warden.hp = world.warden.maxHp;
-  world.warden.invulnerable = 0;
-  world.starseed.hp = world.starseed.maxHp;
+  boss.hp = boss.maxHp * 0.58;
+  boss.phase = 2;
+  boss.lastPhase = 2;
+
+  world.darts.length = 0;
   world.bullets.length = 0;
   world.hazards.length = 0;
-  stepWorld(app, 0.46, {
-    keepAlive: true,
-    control: () => ({
-      moveX: 0, moveY: 0, aimX: boss.x, aimY: boss.y,
-      firing: true, dash: false, bloom: false,
-    }),
+  world.enemies.length = 0;
+  world.pickups.length = 0;
+  world.warden.x = 640;
+  world.warden.y = 584;
+  world.warden.hp = world.warden.maxHp;
+  world.warden.invulnerable = 0;
+  world.warden.bloom = 100;
+  world.starseed.hp = world.starseed.maxHp;
+
+  // The Crown opens phase 2 with layered magenta rings that expand across the glade.
+  bulletRing(world, boss.x, boss.y, 16, 130, {
+    radius: 6, damage: 6, color: '#ff87e0', kind: 'spore', life: 7,
+  });
+  bulletRing(world, boss.x, boss.y, 10, 85, {
+    radius: 7, damage: 5, color: '#ffd0f4', kind: 'spore', life: 7, offset: 0.25,
   });
 
-  if (!world.boss) {
-    const second = createBoss(world, 'crown');
-    second.state = 'idle';
-    second.attackTimer = 999;
+  const aimX = 658;
+  const aimY = 226;
+  const aimedFire = () => ({
+    moveX: 0, moveY: 0, aimX, aimY, firing: true, dash: false, bloom: false,
+  });
+
+  // Real simulation: the Warden fires up at the Crown while the outer rings spread wide.
+  stepWorld(app, 1.25, { keepAlive: true, control: aimedFire });
+  bulletRing(world, boss.x, boss.y, 8, 170, {
+    radius: 6, damage: 6, color: '#ff9bf0', kind: 'spore', life: 7, offset: 0.6,
+  });
+
+  // Minions and pollen join only now, so the expanding rings stay legible.
+  const minions = [
+    ['shade', 392, 330], ['splitter', 882, 330], ['spitter', 300, 472],
+    ['thornback', 982, 468], ['inkling', 522, 324], ['wispEater', 792, 500], ['thornback', 732, 602],
+  ];
+  for (const [kind, x, y] of minions) {
+    world.spawnEnemy(kind, x, y, kind === 'splitter');
   }
+  world.dropPollen(418, 642, 2, false);
+  world.dropPollen(872, 648, 2, false);
+  stepWorld(app, 0.55, { keepAlive: true, control: aimedFire });
+
+  // A warning line that has not fired yet: thin, red and pulsing above the arena.
+  spawnHazard(world, {
+    type: 'beam',
+    x: 640, y: 238, x2: 226, y2: 700,
+    width: 26, delay: 2.2, life: 0.35,
+    damage: 12, target: 'warden', color: '#ff5b4a',
+  });
+
+  // Real damage calls create hit sparks and merge the floating numbers on the Crown.
+  if (world.boss) {
+    world.damageEnemy(world.boss, 14, { crit: false });
+    world.damageEnemy(world.boss, 18, { crit: false });
+    world.damageEnemy(world.boss, 25, { crit: true });
+  }
+
   const shownBoss = world.boss;
   if (shownBoss) {
     shownBoss.x = 640;
@@ -373,15 +411,17 @@ function stageBoss(app) {
     shownBoss.lastPhase = 2;
     shownBoss.hitFlash = 0;
   }
+
   world.warden.x = 640;
   world.warden.y = 584;
-  world.warden.aimX = 640;
-  world.warden.aimY = 238;
-  world.warden.aimAngle = -Math.PI / 2;
   world.warden.hp = world.warden.maxHp;
-  world.warden.bloom = 100;
   world.warden.invulnerable = 0;
+  world.warden.bloom = 100;
+  world.warden.aimX = aimX;
+  world.warden.aimY = aimY;
+  world.warden.aimAngle = Math.atan2(aimY - world.warden.y, aimX - world.warden.x);
   world.starseed.hp = world.starseed.maxHp;
+
   world.score.score = 38640;
   world.score.kills = 214;
   world.score.eliteKills = 27;
@@ -394,20 +434,11 @@ function stageBoss(app) {
   world.score.pickupScore = 126;
   world.runTime = 423;
 
-  for (let i = 0; i < 3; i += 1) {
-    world.spawnEnemy(i % 2 === 0 ? 'shade' : 'splitter', 360 + i * 260, 322 + (i % 2) * 86, i === 1);
-  }
-  bulletRing(world, 640, 238, 18, 132, { radius: 7, damage: 6, color: '#ff87e0', kind: 'spore', life: 5 });
-  bulletRing(world, 640, 238, 10, 88, { radius: 9, damage: 5, color: '#ffd0f4', kind: 'spore', life: 5.4, offset: 0.3 });
-  spawnHazard(world, {
-    type: 'beam', x: 640, y: 238, x2: 208, y2: 668, width: 26, delay: 0.6, life: 0.3, damage: 12, target: 'warden', color: '#ff5b4a',
-  });
-  addRing(world.particles, 640, 238, 62, 280, 'rgba(255,135,224,0.62)', 0.9, 5);
-  burst(world.particles, world.rng, 640, 238, '#ff9bf0', 22, { speed: 210, life: 0.8, size: 3.4 });
-  burst(world.particles, world.rng, 640, 330, '#b6ffe6', 10, { speed: 120, life: 0.6, size: 2.6 });
+  burst(world.particles, world.rng, 640, 238, '#ff9bf0', 16, { speed: 180, life: 0.7, size: 3 });
+  addRing(world.particles, 640, 238, 62, 250, 'rgba(255,135,224,0.55)', 0.9, 5);
   world.camera.flash = 0;
   world.camera.hitStop = 0;
-  world.camera.shake = Math.max(world.camera.shake, 3);
+  world.camera.shake = Math.max(world.camera.shake, 3.5);
   app.screen = SCREEN.play;
   app.screenTime = 2;
 }
