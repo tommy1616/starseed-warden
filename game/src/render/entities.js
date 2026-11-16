@@ -431,7 +431,7 @@ function drawStarseed(ctx, world) {
   }
 }
 
-function drawWarden(ctx, world) {
+function drawWarden(ctx, world, options = {}) {
   const warden = world.warden;
   const mods = world.mods;
   const time = world.time;
@@ -452,6 +452,13 @@ function drawWarden(ctx, world) {
   ctx.beginPath();
   ctx.arc(0, 0, warden.r * 3.6, 0, TAU);
   ctx.fill();
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.fillStyle = 'rgba(80,255,220,0.12)';
+  ctx.beginPath();
+  ctx.arc(0, 0, warden.r * 2.5, 0, TAU);
+  ctx.fill();
+  ctx.restore();
 
   ctx.save();
   ctx.rotate(warden.aimAngle + Math.PI / 2);
@@ -502,6 +509,28 @@ function drawWarden(ctx, world) {
       glow(ctx, 0, 0, 13, 'rgba(143,247,200,0.25)');
       ctx.restore();
     }
+  }
+
+  // A thin, low-contrast aim line toward the cursor; the reticle is drawn by effects.js.
+  if (options.aim !== false) {
+    const aimX = Number.isFinite(warden.aimX) ? warden.aimX : warden.x + Math.cos(warden.aimAngle) * 160;
+    const aimY = Number.isFinite(warden.aimY) ? warden.aimY : warden.y + Math.sin(warden.aimAngle) * 160;
+    const adx = aimX - warden.x;
+    const ady = aimY - warden.y;
+    const alen = Math.hypot(adx, ady) || 1;
+    const reach = Math.min(300, alen);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.strokeStyle = 'rgba(126,247,224,0.18)';
+    ctx.lineWidth = 1.4;
+    ctx.setLineDash([7, 11]);
+    ctx.lineDashOffset = -time * 26;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo((adx / alen) * reach, (ady / alen) * reach);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
   }
   ctx.restore();
 }
@@ -574,8 +603,8 @@ export function drawEntities(ctx, world, options = {}) {
   }
   if (world.boss && !world.boss.dead) drawBossBody(ctx, world, world.boss);
   drawStarseed(ctx, world);
-  drawProjectiles(ctx, world);
-  if (options.warden !== false && (!world.outcome || world.outcome === 'victory')) drawWarden(ctx, world);
+  if (options.projectiles !== false) drawProjectiles(ctx, world);
+  if (options.warden !== false && (!world.outcome || world.outcome === 'victory')) drawWarden(ctx, world, options);
 }
 
 export { glow };

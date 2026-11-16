@@ -11,19 +11,26 @@ import { bulletRing, spawnHazard } from './projectiles.js';
 import { addRing, burst } from './particles.js';
 
 function nearestEnemy(world) {
+  // Prefer the creature most likely to reach the Starseed; wisp-eaters are urgent.
   let best = null;
-  let bestDistance = Infinity;
+  let bestScore = Infinity;
   for (const enemy of world.enemies) {
     if (enemy.dead) continue;
-    const distance = (enemy.x - world.warden.x) ** 2 + (enemy.y - world.warden.y) ** 2;
-    if (distance < bestDistance) {
-      bestDistance = distance;
+    const toSeed = Math.hypot(enemy.x - world.starseed.x, enemy.y - world.starseed.y);
+    const toWarden = Math.hypot(enemy.x - world.warden.x, enemy.y - world.warden.y);
+    const urgency = enemy.kind === 'wispEater' ? -36 : 0;
+    const score = toSeed + toWarden * 0.22 + urgency;
+    if (score < bestScore) {
+      bestScore = score;
       best = enemy;
     }
   }
   if (world.boss && !world.boss.dead) {
-    const distance = (world.boss.x - world.warden.x) ** 2 + (world.boss.y - world.warden.y) ** 2;
-    if (distance < bestDistance) best = world.boss;
+    const toSeed = Math.hypot(world.boss.x - world.starseed.x, world.boss.y - world.starseed.y);
+    const toWarden = Math.hypot(world.boss.x - world.warden.x, world.boss.y - world.warden.y);
+    // Tempting to tunnel the boss, but a minion chewing the Starseed must come first.
+    const bossScore = toSeed + toWarden * 0.22 + 70;
+    if (!best || bossScore < bestScore) best = world.boss;
   }
   return best;
 }
@@ -41,7 +48,7 @@ function nearestBullet(world) {
   return best;
 }
 
-/** A simple pilot: orbit the Starseed, keep away from crowds and shots, aim and fire, Bloom on crowds. */
+/** A simple pilot: guard the Starseed, keep away from crowds and shots, fire, Bloom on crowds. */
 export function autopilot(world) {
   const warden = world.warden;
   const seed = world.starseed;
@@ -52,18 +59,19 @@ export function autopilot(world) {
   const seedDx = seed.x - warden.x;
   const seedDy = seed.y - warden.y;
   const seedDistance = Math.hypot(seedDx, seedDy) || 1;
-  if (seedDistance > 230) {
-    mx += (seedDx / seedDistance) * 1.4;
-    my += (seedDy / seedDistance) * 1.4;
-  } else if (seedDistance < 120) {
-    mx -= (seedDx / seedDistance) * 0.8;
-    my -= (seedDy / seedDistance) * 0.8;
+  if (seedDistance > 190) {
+    mx += (seedDx / seedDistance) * 1.7;
+    my += (seedDy / seedDistance) * 1.7;
+  } else if (seedDistance < 110) {
+    mx -= (seedDx / seedDistance) * 0.9;
+    my -= (seedDy / seedDistance) * 0.9;
   } else {
-    mx += (-seedDy / seedDistance) * 0.5;
-    my += (seedDx / seedDistance) * 0.5;
+    mx += (-seedDy / seedDistance) * 0.45;
+    my += (seedDx / seedDistance) * 0.45;
   }
 
   let crowd = 0;
+  let seedThreats = 0;
   let nearest = Infinity;
   for (const enemy of world.enemies) {
     if (enemy.dead || enemy.burrowed) continue;
@@ -72,30 +80,33 @@ export function autopilot(world) {
     const distance = Math.hypot(dx, dy) || 1;
     nearest = Math.min(nearest, distance);
     if (distance < 150) {
-      const weight = (1 - distance / 150) * 2.1;
+      const weight = (1 - distance / 150) * 2.2;
       mx += (dx / distance) * weight;
       my += (dy / distance) * weight;
     }
-    if (distance < 180) crowd += 1;
+    const toSeed = Math.hypot(enemy.x - seed.x, enemy.y - seed.y);
+    if (toSeed < 220) seedThreats += 1;
+    if (distance < 190) crowd += 1;
   }
   if (world.boss && !world.boss.dead) {
     const dx = warden.x - world.boss.x;
     const dy = warden.y - world.boss.y;
     const distance = Math.hypot(dx, dy) || 1;
     nearest = Math.min(nearest, distance);
-    if (distance < 190) {
-      const weight = (1 - distance / 190) * 2.4;
+    if (distance < 200) {
+      const weight = (1 - distance / 200) * 2.4;
       mx += (dx / distance) * weight;
       my += (dy / distance) * weight;
     }
+    if (Math.hypot(world.boss.x - seed.x, world.boss.y - seed.y) < 280) seedThreats += 2;
   }
   const bullet = nearestBullet(world);
   if (bullet) {
     const dx = warden.x - bullet.x;
     const dy = warden.y - bullet.y;
     const distance = Math.hypot(dx, dy) || 1;
-    mx += (dx / distance) * 1.8;
-    my += (dy / distance) * 1.8;
+    mx += (dx / distance) * 2;
+    my += (dy / distance) * 2;
   }
 
   if (warden.x < 90) mx += 1.2;
@@ -119,7 +130,7 @@ export function autopilot(world) {
     aimY: target ? target.y : seed.y - 120,
     firing: Boolean(target),
     dash: nearest < 86 || Boolean(bullet),
-    bloom: warden.bloom >= 100 && crowd > 0,
+    bloom: warden.bloom >= 100 && (crowd > 0 || seedThreats > 1),
   };
 }
 
@@ -277,6 +288,10 @@ function stagePlay(app) {
   world.warden.bloom = 100;
   world.score.combo = Math.max(world.score.combo, 16);
   world.score.comboTimer = 2.3;
+  world.score.shots = Math.max(world.score.shots, 512);
+  world.score.hits = Math.max(world.score.hits, 388);
+  world.score.comboBest = Math.max(world.score.comboBest, 24);
+  world.runTime = Math.max(world.runTime, 168);
   app.screen = SCREEN.play;
   app.screenTime = 2;
 }
@@ -313,35 +328,86 @@ function stageBoss(app) {
   world.spawnQueue = [];
   world.pendingBoss = null;
   world.bannerTimer = 0;
-  world.runTime = 388;
+  world.runTime = 418;
   const boss = createBoss(world, 'crown');
   boss.state = 'idle';
-  boss.attackTimer = 1.1;
-  stepWorld(app, 2.2);
+  boss.attackTimer = 999;
+  stepWorld(app, 0.9, { keepAlive: true });
+
+  // Compose the frame deliberately: the Warden low and centred, firing up at the Crown.
+  boss.x = 640;
+  boss.y = 238;
+  boss.state = 'idle';
+  boss.attackTimer = 999;
+  world.warden.x = 640;
+  world.warden.y = 584;
+  world.warden.aimX = boss.x;
+  world.warden.aimY = boss.y;
+  world.warden.aimAngle = -Math.PI / 2;
+  world.warden.hp = world.warden.maxHp;
+  world.warden.invulnerable = 0;
+  world.starseed.hp = world.starseed.maxHp;
+  world.bullets.length = 0;
+  world.hazards.length = 0;
+  stepWorld(app, 0.46, {
+    keepAlive: true,
+    control: () => ({
+      moveX: 0, moveY: 0, aimX: boss.x, aimY: boss.y,
+      firing: true, dash: false, bloom: false,
+    }),
+  });
+
   if (!world.boss) {
     const second = createBoss(world, 'crown');
     second.state = 'idle';
-    second.hp = second.maxHp * 0.6;
+    second.attackTimer = 999;
   }
-  boss.hp = Math.max(1, boss.maxHp * (world.boss === boss ? 0.58 : 0.78));
-  boss.phase = world.boss === boss ? 2 : 1;
-  boss.lastPhase = boss.phase;
-  for (let i = 0; i < 3; i += 1) {
-    world.spawnEnemy(i % 2 === 0 ? 'shade' : 'splitter', 380 + i * 250, 300 + (i % 2) * 100, i === 1);
+  const shownBoss = world.boss;
+  if (shownBoss) {
+    shownBoss.x = 640;
+    shownBoss.y = 238;
+    shownBoss.state = 'idle';
+    shownBoss.attackTimer = 999;
+    shownBoss.hp = shownBoss.maxHp * 0.58;
+    shownBoss.phase = 2;
+    shownBoss.lastPhase = 2;
+    shownBoss.hitFlash = 0;
   }
-  bulletRing(world, boss.x, boss.y, 18, 140, { radius: 7, damage: 6, color: '#ff87e0', kind: 'spore', life: 5 });
-  spawnHazard(world, {
-    type: 'beam', x: boss.x, y: boss.y, x2: 240, y2: 660, width: 26, delay: 0.6, life: 0.3, damage: 12, target: 'warden', color: '#ff5b4a',
-  });
-  addRing(world.particles, boss.x, boss.y, boss.r, 260, 'rgba(255,135,224,0.65)', 0.9, 5);
-  world.score.combo = Math.max(world.score.combo, 21);
-  world.score.comboTimer = 2.2;
-  world.score.score = Math.max(world.score.score, 38640);
-  app.world.warden.bloom = 100;
-  stepWorld(app, 0.12);
-  world.camera.flash = 0;
-  world.starseed.hp = world.starseed.maxHp;
+  world.warden.x = 640;
+  world.warden.y = 584;
+  world.warden.aimX = 640;
+  world.warden.aimY = 238;
+  world.warden.aimAngle = -Math.PI / 2;
   world.warden.hp = world.warden.maxHp;
+  world.warden.bloom = 100;
+  world.warden.invulnerable = 0;
+  world.starseed.hp = world.starseed.maxHp;
+  world.score.score = 38640;
+  world.score.kills = 214;
+  world.score.eliteKills = 27;
+  world.score.bossKills = 0;
+  world.score.shots = 824;
+  world.score.hits = 651;
+  world.score.combo = 21;
+  world.score.comboTimer = 2.2;
+  world.score.comboBest = 31;
+  world.score.pickupScore = 126;
+  world.runTime = 423;
+
+  for (let i = 0; i < 3; i += 1) {
+    world.spawnEnemy(i % 2 === 0 ? 'shade' : 'splitter', 360 + i * 260, 322 + (i % 2) * 86, i === 1);
+  }
+  bulletRing(world, 640, 238, 18, 132, { radius: 7, damage: 6, color: '#ff87e0', kind: 'spore', life: 5 });
+  bulletRing(world, 640, 238, 10, 88, { radius: 9, damage: 5, color: '#ffd0f4', kind: 'spore', life: 5.4, offset: 0.3 });
+  spawnHazard(world, {
+    type: 'beam', x: 640, y: 238, x2: 208, y2: 668, width: 26, delay: 0.6, life: 0.3, damage: 12, target: 'warden', color: '#ff5b4a',
+  });
+  addRing(world.particles, 640, 238, 62, 280, 'rgba(255,135,224,0.62)', 0.9, 5);
+  burst(world.particles, world.rng, 640, 238, '#ff9bf0', 22, { speed: 210, life: 0.8, size: 3.4 });
+  burst(world.particles, world.rng, 640, 330, '#b6ffe6', 10, { speed: 120, life: 0.6, size: 2.6 });
+  world.camera.flash = 0;
+  world.camera.hitStop = 0;
+  world.camera.shake = Math.max(world.camera.shake, 3);
   app.screen = SCREEN.play;
   app.screenTime = 2;
 }
@@ -387,6 +453,7 @@ function stageVictory(app) {
 
 function stageDefeat(app) {
   prepareWorld(app);
+  applyCards(app.world, ['spread', 'rapid', 'frost', 'vitality', 'magnet']);
   const world = app.world;
   world.wave = 6;
   world.biomeIndex = 1;
@@ -399,6 +466,7 @@ function stageDefeat(app) {
   world.score.shots = 452;
   world.score.hits = 318;
   world.score.comboBest = 19;
+  world.score.eliteKills = 11;
   world.starseed.hp = world.starseed.maxHp * 0.42;
   world.warden.hp = 1;
   world.lose('warden');

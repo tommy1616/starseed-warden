@@ -1,11 +1,13 @@
 // The end of a run, victory or defeat: a large title, zero to three Starseed stars, the run's
 // numbers, a new-best flag and the two ways back in (Play again, Title). Enter plays again.
 import { FIELD, TITLE_FONT } from '../config.js';
+import { RARITY } from '../palette.js';
+import { ownedCards } from '../upgrades.js';
 import { drawBackground } from './background.js';
 import { drawEntities } from './entities.js';
 import { drawAirEffects, drawHazards } from './effects.js';
 import { addButton, clearButtons, drawButtons, panel, roundedRect } from '../ui/buttons.js';
-import { drawStar } from './icons.js';
+import { drawStar, drawUpgradeIcon } from './icons.js';
 
 function formatTime(seconds) {
   const total = Math.max(0, Math.floor(seconds));
@@ -67,6 +69,54 @@ function drawStats(ctx, app, x, y, w, h) {
   }
 }
 
+function drawBuildSummary(ctx, app, y) {
+  const results = app.results;
+  const world = app.world;
+  const cards = world ? ownedCards(world) : [];
+  const cx = FIELD.width / 2;
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = '700 10px system-ui, sans-serif';
+  ctx.fillStyle = 'rgba(143,182,198,0.72)';
+  ctx.fillText(`BLOOMS TAKEN  ·  ${results.upgradesTaken}`, cx, y);
+  if (cards.length === 0) {
+    ctx.font = '600 11px system-ui, sans-serif';
+    ctx.fillStyle = 'rgba(143,182,198,0.5)';
+    ctx.fillText('NO BLOOMS GATHERED', cx, y + 18);
+    ctx.restore();
+    return;
+  }
+  const shown = cards.slice(0, 16);
+  const size = 22;
+  const gap = 5;
+  const total = shown.length * size + (shown.length - 1) * gap;
+  let x = cx - total / 2;
+  for (const { card, level } of shown) {
+    const rarity = RARITY[card.rarity];
+    roundedRect(ctx, x, y + 8, size, size, 6);
+    ctx.fillStyle = 'rgba(5,14,28,0.9)';
+    ctx.fill();
+    ctx.strokeStyle = rarity.color;
+    ctx.lineWidth = 1.1;
+    ctx.stroke();
+    drawUpgradeIcon(ctx, card.icon, x + size / 2, y + 8 + size / 2 - 1, 14, rarity.color, app.ui.time);
+    if (level > 1) {
+      ctx.fillStyle = '#ffeeb8';
+      ctx.beginPath();
+      ctx.arc(x + size - 4, y + size + 4, 5.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#172026';
+      ctx.font = '800 7px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(String(level), x + size - 4, y + size + 5);
+      ctx.textAlign = 'center';
+    }
+    x += size + gap;
+  }
+  ctx.restore();
+}
+
 export function drawResults(ctx, app) {
   const results = app.results;
   if (!results) return;
@@ -76,7 +126,7 @@ export function drawResults(ctx, app) {
     drawHazards(ctx, world);
     ctx.save();
     ctx.globalAlpha = 0.4;
-    drawEntities(ctx, world, { warden: false });
+    drawEntities(ctx, world, { warden: false, projectiles: false, aim: false });
     drawAirEffects(ctx, world);
     ctx.restore();
   }
@@ -131,7 +181,8 @@ export function drawResults(ctx, app) {
 
   ctx.save();
   ctx.globalAlpha = appear;
-  drawStats(ctx, app, 280, 258, 720, 232);
+  drawStats(ctx, app, 280, 258, 720, 214);
+  drawBuildSummary(ctx, app, 486);
   ctx.restore();
 
   clearButtons(app.ui);

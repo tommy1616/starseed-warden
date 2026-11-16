@@ -53,7 +53,7 @@ export function createBoss(world, type) {
     hp: def.hp * hpScale,
     maxHp: def.hp * hpScale,
     touchDamage: def.touch * world.difficulty.damage,
-    seedDamage: def.seed * world.difficulty.damage,
+    seedDamage: def.seed * world.difficulty.damage * (world.difficulty.seedDamage ?? 1),
     color: def.color,
     glow: def.glow,
     dead: false,

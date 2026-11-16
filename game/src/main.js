@@ -11,7 +11,7 @@ import { stageShot } from './shots.js';
 import { createView } from './render/view.js';
 import { drawBackground } from './render/background.js';
 import { drawEntities } from './render/entities.js';
-import { drawHazards, drawAirEffects, drawLowHealth, drawFlash, drawWaveBanner } from './render/effects.js';
+import { drawHazards, drawAirEffects, drawReticle, drawLowHealth, drawFlash, drawWaveBanner } from './render/effects.js';
 import { drawHud } from './render/hud.js';
 import { drawTitle } from './render/title.js';
 import { drawDraft } from './render/draft.js';
@@ -130,6 +130,7 @@ function drawPlay(ctx, world) {
   drawHazards(ctx, world);
   drawEntities(ctx, world);
   drawAirEffects(ctx, world);
+  drawReticle(ctx, world);
   drawLowHealth(ctx, world);
   drawFlash(ctx, world.camera);
   drawHud(ctx, world);

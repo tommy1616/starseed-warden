@@ -133,6 +133,8 @@ export function drawAirEffects(ctx, world) {
 
   for (const number of particles.numbers) {
     const alpha = Math.max(0, Math.min(1, number.life / number.maxLife));
+    // Keep floating combat text out of the top HUD and the boss band.
+    const numberY = Math.max(162, number.y);
     ctx.save();
     ctx.globalAlpha = alpha;
     ctx.font = `800 ${number.size}px system-ui, -apple-system, "Segoe UI", sans-serif`;
@@ -140,11 +142,38 @@ export function drawAirEffects(ctx, world) {
     ctx.textBaseline = 'middle';
     ctx.lineWidth = 4;
     ctx.strokeStyle = 'rgba(4,8,18,0.85)';
-    ctx.strokeText(number.text, number.x, number.y);
+    ctx.strokeText(number.text, number.x, numberY);
     ctx.fillStyle = number.color;
-    ctx.fillText(number.text, number.x, number.y);
+    ctx.fillText(number.text, number.x, numberY);
     ctx.restore();
   }
+}
+
+export function drawReticle(ctx, world) {
+  const warden = world.warden;
+  if (!warden || world.outcome) return;
+  const x = warden.aimX;
+  const y = warden.aimY;
+  if (!Number.isFinite(x) || !Number.isFinite(y) || x < 0 || x > FIELD.width || y < 0 || y > FIELD.height) return;
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.strokeStyle = 'rgba(182,255,230,0.8)';
+  ctx.fillStyle = 'rgba(234,255,248,0.9)';
+  ctx.lineWidth = 1.4;
+  ctx.beginPath();
+  ctx.arc(x, y, 9, 0, TAU);
+  ctx.stroke();
+  for (let i = 0; i < 4; i += 1) {
+    const angle = (i / 4) * TAU + world.time * 0.4;
+    ctx.beginPath();
+    ctx.moveTo(x + Math.cos(angle) * 12, y + Math.sin(angle) * 12);
+    ctx.lineTo(x + Math.cos(angle) * 18, y + Math.sin(angle) * 18);
+    ctx.stroke();
+  }
+  ctx.beginPath();
+  ctx.arc(x, y, 1.8, 0, TAU);
+  ctx.fill();
+  ctx.restore();
 }
 
 export function drawLowHealth(ctx, world) {

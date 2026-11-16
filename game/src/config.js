@@ -22,7 +22,7 @@ export const STARSEED = {
 };
 
 export const PLAYER = {
-  radius: 15,
+  radius: 17,
   speed: 300,
   maxHp: 100,
   hitInvulnerable: 0.95,
@@ -50,20 +50,24 @@ export const DIFFICULTIES = [
     id: 'sprout',
     name: 'Sprout',
     blurb: 'A gentle first night.',
-    hp: 0.78,
-    damage: 0.68,
-    spawn: 0.82,
+    hp: 0.7,
+    damage: 0.55,
+    spawn: 0.75,
     score: 0.85,
+    seedHp: 2.35,
+    seedDamage: 0.45,
     color: '#78f0b8',
   },
   {
     id: 'warden',
     name: 'Warden',
     blurb: 'The garden as it is.',
-    hp: 1,
-    damage: 1,
-    spawn: 1,
+    hp: 0.95,
+    damage: 0.95,
+    spawn: 0.95,
     score: 1,
+    seedHp: 2.2,
+    seedDamage: 0.55,
     color: '#7ee8ff',
   },
   {
@@ -74,6 +78,8 @@ export const DIFFICULTIES = [
     damage: 1.28,
     spawn: 1.2,
     score: 1.25,
+    seedHp: 0.95,
+    seedDamage: 1.15,
     color: '#ff87e0',
   },
 ];

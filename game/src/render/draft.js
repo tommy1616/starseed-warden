@@ -144,7 +144,7 @@ export function drawDraft(ctx, app) {
     drawHazards(ctx, world);
     ctx.save();
     ctx.globalAlpha = 0.45;
-    drawEntities(ctx, world);
+    drawEntities(ctx, world, { aim: false });
     drawAirEffects(ctx, world);
     ctx.restore();
   }

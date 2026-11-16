@@ -7,15 +7,15 @@ import { BIOMES, DIFFICULTIES } from './config.js';
 export const WAVES = [
   {
     biome: 0, interval: 0.92,
-    parts: [['inkling', 9]],
+    parts: [['inkling', 8]],
   },
   {
     biome: 0, interval: 0.84,
-    parts: [['inkling', 9], ['wispEater', 3]],
+    parts: [['inkling', 7], ['wispEater', 2]],
   },
   {
     biome: 0, interval: 0.78,
-    parts: [['inkling', 7], ['thornback', 2], ['spitter', 3]],
+    parts: [['inkling', 6], ['thornback', 2], ['spitter', 2]],
   },
   {
     biome: 0, interval: 0.7, boss: 'bramble',

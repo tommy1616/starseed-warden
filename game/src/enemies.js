@@ -67,7 +67,7 @@ export function makeEnemy(world, kind, x, y, elite = false) {
     maxHp: def.hp * hpScale,
     speed: def.speed * (1 + (wave - 1) * 0.009) * (elite ? 1.04 : 1),
     touchDamage: def.touch * damageScale,
-    seedDamage: def.seed * damageScale,
+    seedDamage: def.seed * damageScale * (difficulty.seedDamage ?? 1),
     elite,
     color: def.color,
     glow: elite ? '#ffe28a' : def.glow,

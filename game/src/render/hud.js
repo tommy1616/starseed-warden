@@ -67,14 +67,14 @@ function drawWardenPanel(ctx, world) {
   label(ctx, 'WARDEN', x + 42, y + 20, 13, 'rgba(234,255,248,0.75)', 'left', 800);
   const fraction = warden.hp / warden.maxHp;
   bar(ctx, x + 42, y + 34, 220, 12, fraction, fraction < 0.3 ? '#ff5b4a' : '#ff6b8a', 'rgba(255,107,138,0.16)', fraction < 0.3 ? 10 : 0);
-  label(ctx, `${Math.ceil(warden.hp)} / ${Math.round(warden.maxHp)}`, x + 42, y + 57, 12, 'rgba(234,255,248,0.72)', 'left', 600);
+  label(ctx, `${Math.ceil(warden.hp)} / ${Math.round(warden.maxHp)}`, x + 42, y + 56, 12, 'rgba(234,255,248,0.72)', 'left', 600);
   const pips = Math.min(10, Math.ceil(warden.maxHp / 20));
   for (let i = 0; i < pips; i += 1) {
-    const px = x + 218 + (i % 5) * 15;
-    const py = y + 46 + Math.floor(i / 5) * 12;
+    const px = x + 140 + i * 11;
+    const py = y + 69;
     ctx.fillStyle = i < Math.ceil(warden.hp / 20) ? '#ff8fa3' : 'rgba(255,143,163,0.18)';
     ctx.beginPath();
-    ctx.arc(px, py, 2.4, 0, Math.PI * 2);
+    ctx.arc(px, py, 2.2, 0, Math.PI * 2);
     ctx.fill();
   }
   label(ctx, `SCORE ${formatNumber(world.score.score)}`, x + 22, y + 88, 18, '#ffeeb8', 'left', 800);
@@ -128,24 +128,25 @@ function drawWavePanel(ctx, world) {
   const h = 72;
   panel(ctx, x, y, w, h, { fill: 'rgba(6,16,28,0.82)', edge: 'rgba(126,232,255,0.22)', radius: 14 });
   const biome = BIOMES[world.biomeIndex] ?? BIOMES[0];
-  label(ctx, `WAVE ${world.wave} / 12`, x + 18, y + 20, 16, '#eafff8', 'left', 800);
-  label(ctx, biome.name.toUpperCase(), x + 18, y + 40, 11, biome.accent, 'left', 700);
+  label(ctx, `WAVE ${world.wave} / 12`, x + 18, y + 18, 16, '#eafff8', 'left', 800);
+  label(ctx, biome.name.toUpperCase(), x + 18, y + 36, 10, biome.accent, 'left', 700);
   const remaining = remainingEnemies(world);
-  label(ctx, remaining === 0 ? 'GLADE CLEAR' : `${remaining} HOLLOW LEFT`, x + 18, y + 58, 12, remaining === 0 ? '#78f0b8' : 'rgba(234,255,248,0.72)', 'left', 600);
+  label(ctx, remaining === 0 ? 'GLADE CLEAR' : `${remaining} HOLLOW LEFT`, x + 18, y + 55, 12, remaining === 0 ? '#78f0b8' : 'rgba(234,255,248,0.72)', 'left', 600);
+  label(ctx, `KILLS ${world.score.kills}`, x + w - 18, y + 18, 11, 'rgba(234,255,248,0.66)', 'right', 600);
   const waves = 12;
+  const dotGap = 12;
+  const dotStart = x + w - 18 - (waves - 1) * dotGap;
   for (let i = 0; i < waves; i += 1) {
-    const px = x + 186 + (i % 6) * 18;
-    const py = y + 22 + Math.floor(i / 6) * 13;
+    const px = dotStart + i * dotGap;
+    const py = y + 39;
     const done = i + 1 < world.wave;
     const current = i + 1 === world.wave;
-    ctx.fillStyle = done ? biome.accent : current ? '#ffd76a' : 'rgba(143,182,198,0.2)';
+    ctx.fillStyle = done ? biome.accent : current ? '#ffd76a' : 'rgba(143,182,198,0.22)';
     ctx.beginPath();
-    ctx.arc(px, py, current ? 3.4 : 2.6, 0, Math.PI * 2);
+    ctx.arc(px, py, current ? 3.3 : 2.5, 0, Math.PI * 2);
     ctx.fill();
   }
-  label(ctx, 'SCORE', x + w - 18, y + 22, 10, 'rgba(143,182,198,0.8)', 'right', 700);
-  label(ctx, formatNumber(world.score.score), x + w - 18, y + 42, 19, '#ffeeb8', 'right', 800);
-  label(ctx, `KILLS ${world.score.kills}`, x + w - 18, y + 60, 11, 'rgba(234,255,248,0.6)', 'right', 600);
+  label(ctx, 'WAVE PROGRESS', x + w - 18, y + 58, 9, 'rgba(143,182,198,0.62)', 'right', 600);
 }
 
 function drawBloomAndDash(ctx, world) {
@@ -229,24 +230,68 @@ function drawUpgradeRow(ctx, world) {
 function drawBossBar(ctx, world) {
   const boss = world.boss;
   if (!boss || boss.dead) return;
-  const w = 680;
+  const w = 720;
   const x = (FIELD.width - w) / 2;
-  const y = 104;
-  panel(ctx, x, y, w, 50, { fill: 'rgba(10,6,20,0.86)', edge: 'rgba(255,91,74,0.4)', radius: 13 });
-  label(ctx, boss.name.toUpperCase(), x + 20, y + 16, 14, '#ffeeb8', 'left', 800);
+  const y = 92;
+  panel(ctx, x, y, w, 52, { fill: 'rgba(10,6,20,0.9)', edge: 'rgba(255,91,74,0.42)', radius: 13 });
+  label(ctx, boss.name.toUpperCase(), x + 20, y + 17, 14, '#ffeeb8', 'left', 800);
   if (boss.type === 'crown') {
-    label(ctx, `PHASE ${boss.phase}`, x + w - 20, y + 16, 11, '#ff9bf0', 'right', 700);
-  }
-  const fraction = Math.max(0, boss.hp / boss.maxHp);
-  bar(ctx, x + 20, y + 26, w - 40, 13, fraction, boss.type === 'crown' && boss.phase >= 3 ? '#ff5b4a' : '#ff5bd0', 'rgba(255,91,208,0.16)', 8);
-  if (boss.type === 'crown') {
+    label(ctx, 'PHASE', x + w - 78, y + 17, 9, 'rgba(255,155,240,0.75)', 'right', 700);
     for (let i = 0; i < 3; i += 1) {
-      ctx.fillStyle = i < boss.phase ? '#ffd76a' : 'rgba(255,215,106,0.2)';
+      ctx.fillStyle = i < boss.phase ? '#ffd76a' : 'rgba(255,215,106,0.18)';
       ctx.beginPath();
-      ctx.arc(x + w - 58 + i * 14, y + 16, 3.4, 0, Math.PI * 2);
+      ctx.arc(x + w - 62 + i * 16, y + 17, 4, 0, Math.PI * 2);
       ctx.fill();
     }
   }
+  const fraction = Math.max(0, boss.hp / boss.maxHp);
+  bar(ctx, x + 20, y + 29, w - 40, 13, fraction, boss.type === 'crown' && boss.phase >= 3 ? '#ff5b4a' : '#ff5bd0', 'rgba(255,91,208,0.16)', 8);
+}
+
+function drawIntroHint(ctx, world) {
+  const hint = world.introHint;
+  if (!hint || hint.alpha <= 0.01 || world.wave !== 1) return;
+  const chips = [
+    ['WASD', 'MOVE'],
+    ['MOUSE', 'AIM'],
+    ['LMB / J', 'FIRE'],
+    ['SPACE', 'DASH'],
+    ['E', 'BLOOM'],
+  ];
+  const width = 676;
+  const height = 44;
+  const x = (FIELD.width - width) / 2;
+  const y = 592;
+  ctx.save();
+  ctx.globalAlpha = Math.min(1, hint.alpha);
+  panel(ctx, x, y, width, height, { fill: 'rgba(5,14,28,0.78)', edge: 'rgba(126,232,255,0.28)', radius: 14 });
+  let cursor = x + 18;
+  for (let i = 0; i < chips.length; i += 1) {
+    const [key, action] = chips[i];
+    ctx.font = '800 11px system-ui, sans-serif';
+    const keyWidth = Math.max(34, ctx.measureText(key).width + 16);
+    roundedRect(ctx, cursor, y + 12, keyWidth, 20, 6);
+    ctx.fillStyle = 'rgba(182,255,230,0.14)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(182,255,230,0.45)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = '#b6ffe6';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(key, cursor + keyWidth / 2, y + 23);
+    cursor += keyWidth + 7;
+    ctx.font = '700 11px system-ui, sans-serif';
+    ctx.fillStyle = 'rgba(234,255,248,0.78)';
+    ctx.textAlign = 'left';
+    ctx.fillText(action, cursor, y + 23);
+    cursor += ctx.measureText(action).width + 20;
+  }
+  ctx.font = '600 10px system-ui, sans-serif';
+  ctx.fillStyle = 'rgba(255,238,184,0.72)';
+  ctx.textAlign = 'right';
+  ctx.fillText('DEFEND THE STARSEED', x + width - 18, y + 23);
+  ctx.restore();
 }
 
 function drawControlsHint(ctx, world) {
@@ -265,5 +310,6 @@ export function drawHud(ctx, world) {
   drawBloomAndDash(ctx, world);
   drawUpgradeRow(ctx, world);
   drawBossBar(ctx, world);
+  drawIntroHint(ctx, world);
   drawControlsHint(ctx, world);
 }

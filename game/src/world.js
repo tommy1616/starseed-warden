@@ -84,6 +84,8 @@ function makeWarden() {
     bloom: 0,
     bloomLock: 0,
     aimAngle: -Math.PI / 2,
+    aimX: FIELD.width / 2,
+    aimY: 240,
     walkPhase: 0,
     thornTimer: 0,
     orbitAngle: 0,
@@ -99,13 +101,14 @@ function makeWarden() {
   };
 }
 
-function makeStarseed() {
+function makeStarseed(difficulty) {
+  const maxHp = Math.round(STARSEED.maxHp * (difficulty.seedHp ?? 1));
   return {
     x: STARSEED.x,
     y: STARSEED.y,
     r: STARSEED.radius,
-    hp: STARSEED.maxHp,
-    maxHp: STARSEED.maxHp,
+    hp: maxHp,
+    maxHp,
     shield: 0,
     shieldMax: 0,
     shieldTimer: 5,
@@ -148,7 +151,7 @@ export function createWorld(options) {
     pendingBoss: null,
     boss: null,
     warden: makeWarden(),
-    starseed: makeStarseed(),
+    starseed: makeStarseed(options.difficulty),
     enemies: [],
     darts: [],
     bullets: [],
@@ -171,6 +174,7 @@ export function createWorld(options) {
     bloomWasFull: false,
     biomeIndex: 0,
     hurtFlash: 0,
+    introHint: { timer: 10, alpha: 1, moved: false, fired: false },
   };
 
   world.hurtWarden = (amount, sx, sy, kind) => hurtWarden(world, amount, sx, sy, kind);
@@ -297,6 +301,16 @@ export function createWorld(options) {
     startWave(1);
   };
 
+  function updateIntroHint(dt, control) {
+    const hint = world.introHint;
+    if (!hint || world.wave !== 1 || hint.alpha <= 0) return;
+    if (control && Math.hypot(control.moveX ?? 0, control.moveY ?? 0) > 0.15) hint.moved = true;
+    if (control && control.firing) hint.fired = true;
+    if (hint.moved && hint.fired) hint.timer = Math.min(hint.timer, 1.6);
+    hint.timer -= dt;
+    if (hint.timer <= 0 || world.runTime > 12) hint.alpha = Math.max(0, hint.alpha - dt * 1.4);
+  }
+
   function directSpawns(dt) {
     if (world.spawnQueue.length === 0) return;
     world.spawnTimer -= dt;
@@ -343,7 +357,9 @@ export function createWorld(options) {
 
     if (world.phase === 'banner') {
       world.runTime += dt;
+      updateIntroHint(dt, control);
       updatePlayer(world, dt, control);
+      updateDarts(world, dt);
       updateStarseed(world, dt);
       updatePickups(world, dt);
       stepEffects(dt);
@@ -361,6 +377,7 @@ export function createWorld(options) {
     if (world.phase === 'clearing') {
       world.runTime += dt;
       updatePlayer(world, dt, control);
+      updateDarts(world, dt);
       updateStarseed(world, dt);
       updateEnemies(world, dt);
       updateBullets(world, dt);
@@ -378,6 +395,7 @@ export function createWorld(options) {
     if (world.phase !== 'active') return;
 
     world.runTime += dt;
+    updateIntroHint(dt, control);
     directSpawns(dt);
     updatePlayer(world, dt, control);
     updateStarseed(world, dt);

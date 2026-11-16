@@ -11,7 +11,7 @@ export function drawPause(ctx, app) {
   if (world) {
     drawBackground(ctx, world);
     drawHazards(ctx, world);
-    drawEntities(ctx, world);
+    drawEntities(ctx, world, { aim: false });
     drawAirEffects(ctx, world);
   }
   ctx.fillStyle = 'rgba(3,8,20,0.7)';

@@ -232,6 +232,8 @@ export function updatePlayer(world, dt, control) {
 
   const aim = aimVector(control, warden);
   warden.aimAngle = aim.angle;
+  warden.aimX = Number.isFinite(control.aimX) ? control.aimX : warden.x;
+  warden.aimY = Number.isFinite(control.aimY) ? control.aimY : warden.y - 120;
 
   if (control.dash && warden.dashCooldown <= 0 && warden.dashTimer <= 0) startDash(world, control);
 

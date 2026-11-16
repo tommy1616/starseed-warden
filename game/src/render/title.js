@@ -111,7 +111,7 @@ export function drawTitle(ctx, app) {
     drawBackground(ctx, world);
     ctx.save();
     ctx.globalAlpha = 0.86;
-    drawEntities(ctx, world);
+    drawEntities(ctx, world, { aim: false });
     ctx.restore();
     const dim = ctx.createLinearGradient(0, 0, 0, FIELD.height);
     dim.addColorStop(0, 'rgba(4,9,22,0.32)');
