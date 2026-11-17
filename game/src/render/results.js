@@ -3,9 +3,6 @@
 import { FIELD, TITLE_FONT } from '../config.js';
 import { RARITY } from '../palette.js';
 import { ownedCards } from '../upgrades.js';
-import { drawBackground } from './background.js';
-import { drawEntities } from './entities.js';
-import { drawAirEffects, drawHazards } from './effects.js';
 import { addButton, clearButtons, drawButtons, panel, roundedRect } from '../ui/buttons.js';
 import { drawStar, drawUpgradeIcon } from './icons.js';
 
@@ -128,17 +125,6 @@ function drawBuildSummary(ctx, app, y) {
 export function drawResults(ctx, app) {
   const results = app.results;
   if (!results) return;
-  const world = app.world ?? app.titleWorld;
-  if (world) {
-    drawBackground(ctx, world);
-    drawHazards(ctx, world);
-    ctx.save();
-    ctx.globalAlpha = 0.4;
-    drawEntities(ctx, world, { warden: false, projectiles: false, aim: false });
-    drawAirEffects(ctx, world);
-    ctx.restore();
-  }
-
   const tint = results.victory ? 'rgba(4,14,26,0.64)' : 'rgba(20,3,12,0.66)';
   ctx.fillStyle = tint;
   ctx.fillRect(0, 0, FIELD.width, FIELD.height);

@@ -1,9 +1,6 @@
 // Bloom Draft cards: rarity, icon, effect, owned stack and real synergy hints; click or press 1/2/3.
 import { FIELD, TITLE_FONT } from '../config.js';
 import { RARITY } from '../palette.js';
-import { drawBackground } from './background.js';
-import { drawEntities } from './entities.js';
-import { drawAirEffects, drawHazards } from './effects.js';
 import { drawUpgradeIcon } from './icons.js';
 import { draftSynergies } from '../upgrades.js';
 import { OATHS, oathById } from '../oaths.js';
@@ -166,15 +163,6 @@ function drawCard(ctx, app, card, index, x, y, w, h, time, dimmed) {
 
 export function drawDraft(ctx, app) {
   const world = app.world ?? app.titleWorld;
-  if (world) {
-    drawBackground(ctx, world);
-    drawHazards(ctx, world);
-    ctx.save();
-    ctx.globalAlpha = 0.45;
-    drawEntities(ctx, world, { aim: false });
-    drawAirEffects(ctx, world);
-    ctx.restore();
-  }
   ctx.fillStyle = 'rgba(3,8,20,0.7)';
   ctx.fillRect(0, 0, FIELD.width, FIELD.height);
 

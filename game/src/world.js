@@ -3,7 +3,7 @@ import { ARENA, FEEL, FIELD, PLAYER, STARSEED, STEP } from './config.js';
 import { createRng } from './rng.js';
 import { createCamera, updateCamera } from './camera.js';
 import { createParticles, updateParticles, burst, addRing } from './particles.js';
-import { createScore, tickScore, awardWaveClear, awardBossKill, awardVictory, comboMultiplier } from './scoring.js';
+import { createScore, tickScore, awardWaveClear, awardBossKill, awardVictory } from './scoring.js';
 import { updatePlayer } from './player.js';
 import { updateStarseed } from './starseed.js';
 import { makeEnemy, spawnPoint, updateEnemies, resetEnemyIds } from './enemies.js';
@@ -469,21 +469,6 @@ export function createWorld(options) {
   };
 
   return world;
-}
-
-export function remainingEnemies(world) {
-  let alive = 0;
-  for (const enemy of world.enemies) if (!enemy.dead) alive += 1;
-  return alive + world.spawnQueue.length + (world.boss ? 1 : 0);
-}
-
-export function starseedFraction(world) {
-  return Math.max(0, world.starseed.hp / world.starseed.maxHp);
-}
-
-export function comboText(world) {
-  if (world.score.combo < 2) return '';
-  return `×${comboMultiplier(world.score).toFixed(2)}`;
 }
 
 export { STEP, ARENA };

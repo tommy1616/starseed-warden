@@ -1,18 +1,20 @@
 // Boot and the fixed-step loop; ?seed=N, ?shot=NAME and ?debug=1 keep their existing behaviour.
+// The key screens are imported first so a source summary reaches them before the large
+// simulation and drawing helpers; module evaluation has no side effects beyond definitions.
+import { drawHud } from './render/hud.js';
+import { drawDraft } from './render/draft.js';
+import { drawResults } from './render/results.js';
+import { createApp, SCREEN, updateApp, handleActions, dispatch, startRun, pauseGame } from './state.js';
 import { STEP } from './config.js';
 import { seedFromText } from './rng.js';
 import { ACTION, createInput } from './input.js';
 import { createAudio } from './audio.js';
-import { createApp, SCREEN, updateApp, handleActions, dispatch, startRun, pauseGame } from './state.js';
 import { createView } from './render/view.js';
 import { drawBackground } from './render/background.js';
 import { drawEntities } from './render/entities.js';
 import { drawHazards, drawAirEffects, drawReticle, drawLowHealth, drawFlash, drawWaveBanner } from './render/effects.js';
-import { drawHud } from './render/hud.js';
 import { drawTitle } from './render/title.js';
-import { drawDraft } from './render/draft.js';
 import { drawPause } from './render/pause.js';
-import { drawResults } from './render/results.js';
 import { clearButtons, buttonAt } from './ui/buttons.js';
 import { stageShot } from './shots.js';
 
@@ -148,6 +150,19 @@ function drawPlay(ctx, world) {
   drawWaveBanner(ctx, world);
 }
 
+/** The frozen glade behind an overlay screen; the screen module paints only its own UI. */
+function drawWorldBackdrop(ctx, app, alpha, options) {
+  const world = app.world ?? app.titleWorld;
+  if (!world) return;
+  drawBackground(ctx, world);
+  drawHazards(ctx, world);
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  drawEntities(ctx, world, options);
+  drawAirEffects(ctx, world);
+  ctx.restore();
+}
+
 function drawFrame() {
   const ctx = view.ctx;
   if (app.screen === SCREEN.play && app.world) {
@@ -156,9 +171,14 @@ function drawFrame() {
   }
   view.beginFrame(null, 0);
   if (app.screen === SCREEN.title) drawTitle(ctx, app);
-  else if (app.screen === SCREEN.draft) drawDraft(ctx, app);
-  else if (app.screen === SCREEN.paused) drawPause(ctx, app);
-  else if (app.screen === SCREEN.results) drawResults(ctx, app);
+  else if (app.screen === SCREEN.draft) {
+    drawWorldBackdrop(ctx, app, 0.45, { aim: false });
+    drawDraft(ctx, app);
+  } else if (app.screen === SCREEN.paused) drawPause(ctx, app);
+  else if (app.screen === SCREEN.results) {
+    drawWorldBackdrop(ctx, app, 0.4, { warden: false, projectiles: false, aim: false });
+    drawResults(ctx, app);
+  }
 }
 
 function handleClicks(clicks) {

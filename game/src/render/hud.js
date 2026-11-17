@@ -3,7 +3,7 @@ import { BIOMES, FEEL, FIELD, PLAYER } from '../config.js';
 import { COLORS, RARITY } from '../palette.js';
 import { comboMultiplier } from '../scoring.js';
 import { ownedCards } from '../upgrades.js';
-import { remainingEnemies } from '../world.js';
+import { remainingEnemies } from '../world-stats.js';
 import { oathById, oathProgress } from '../oaths.js';
 import { drawUpgradeIcon } from './icons.js';
 import { panel, roundedRect } from '../ui/buttons.js';
