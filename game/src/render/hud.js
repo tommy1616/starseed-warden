@@ -3,10 +3,16 @@ import { BIOMES, FEEL, FIELD, PLAYER } from '../config.js';
 import { COLORS, RARITY } from '../palette.js';
 import { comboMultiplier } from '../scoring.js';
 import { ownedCards } from '../upgrades.js';
-import { remainingEnemies } from '../world-stats.js';
 import { oathById, oathProgress } from '../oaths.js';
 import { drawUpgradeIcon } from './icons.js';
 import { panel, roundedRect } from '../ui/buttons.js';
+
+/** Living creatures, queued spawns and a live boss; the HUD only needs this count. */
+export function remainingEnemies(world) {
+  let alive = 0;
+  for (const enemy of world.enemies) if (!enemy.dead) alive += 1;
+  return alive + world.spawnQueue.length + (world.boss ? 1 : 0);
+}
 
 function formatNumber(value) {
   return Math.round(value).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');

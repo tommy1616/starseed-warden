@@ -397,10 +397,7 @@ export function createWorld(options) {
       return;
     }
 
-    // A hit-stop requested during the previous step freezes this one. Camera decay runs
-    // exactly once per step (inside stepEffects) and the counter is spent only after the
-    // frozen step, so a fresh kick always gets its full duration instead of being drained
-    // by an extra camera update before the simulation sees it.
+    // A hit-stop freezes the next step; camera decay still runs once per step.
     if (world.camera.hitStop > 0) {
       updateParticles(world.particles, dt);
       updateCamera(world.camera, dt);

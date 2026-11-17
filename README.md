@@ -34,7 +34,7 @@ Then open http://localhost:8080.
 - `game/src/main.js` — boot and the one fixed-step loop.
 - `game/src/state.js` — title / play / draft / pause / results screen machine.
 - `game/src/config.js`, `palette.js` — tuning, geometry and the night-garden palette.
-- `game/src/world.js`, `world-stats.js` — simulation orchestration, wave hand-offs and the HUD's read-only field counts.
+- `game/src/world.js` — simulation orchestration, wave hand-offs and run outcome.
 - `game/src/player.js`, `starseed.js` — the Warden's kit (including Perfect Dash) and the Starseed's shell.
 - `game/src/enemies.js`, `bosses.js`, `projectiles.js`, `pickups.js` — the Hollow, its bosses, shots and pollen.
 - `game/src/waves.js` — wave director and biome table.

@@ -1,5 +1,4 @@
-// The nocturnal garden's colours in one place. The player and allies are bioluminescent
-// cyan/mint; the Starseed and pollen are warm gold; the Hollow is magenta, violet and ink.
+// The nocturnal garden palette: mint allies, gold seed, magenta Hollow.
 export const COLORS = {
   night: '#070a17',
   deep: '#0a1230',

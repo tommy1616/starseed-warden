@@ -1,6 +1,4 @@
-// A seeded random generator (mulberry32). Every roll in the simulation comes from here, so
-// a seed and a sequence of inputs always replay the same run — which is what makes the
-// screenshot scenes and the debug defeat reproducible.
+// Seeded mulberry32 RNG: a seed plus inputs replay the same run.
 export function createRng(seed) {
   let state = (seed | 0) ^ 0x9e3779b9;
   function next() {

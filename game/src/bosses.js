@@ -7,31 +7,13 @@ const TAU = Math.PI * 2;
 
 const BOSS_DEFS = {
   bramble: {
-    name: 'Bramble Matron',
-    hp: 820,
-    r: 52,
-    touch: 16,
-    seed: 14,
-    color: '#a44bf0',
-    glow: '#ffb0f4',
+    name: 'Bramble Matron', hp: 820, r: 52, touch: 16, seed: 14, color: '#a44bf0', glow: '#ffb0f4',
   },
   tyrant: {
-    name: 'Spore Tyrant',
-    hp: 1500,
-    r: 58,
-    touch: 17,
-    seed: 16,
-    color: '#b388ff',
-    glow: '#e5c9ff',
+    name: 'Spore Tyrant', hp: 1500, r: 58, touch: 17, seed: 16, color: '#b388ff', glow: '#e5c9ff',
   },
   crown: {
-    name: 'The Withering Crown',
-    hp: 2600,
-    r: 62,
-    touch: 19,
-    seed: 18,
-    color: '#ff5bd0',
-    glow: '#ffe7a8',
+    name: 'The Withering Crown', hp: 2600, r: 62, touch: 19, seed: 18, color: '#ff5bd0', glow: '#ffe7a8',
   },
 };
 

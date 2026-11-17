@@ -12,7 +12,7 @@
 // Local use:
 //   mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
 
-import { cpSync, existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildDossier } from './vendor/makefun-game.ts';
@@ -60,6 +60,8 @@ function sanityCheck(): void {
 function publishGame(): void {
   const from = join(ROOT, 'game');
   const to = join(OUTPUT, 'game');
+  // A reused output directory must not keep a file this entry no longer ships.
+  rmSync(to, { recursive: true, force: true });
   mkdirSync(to, { recursive: true });
   cpSync(from, to, { recursive: true });
 }
@@ -67,6 +69,7 @@ function publishGame(): void {
 function publishScreenshots(): void {
   const from = join(ROOT, 'screenshots');
   const to = join(OUTPUT, 'screenshots');
+  rmSync(to, { recursive: true, force: true });
   mkdirSync(to, { recursive: true });
   cpSync(from, to, { recursive: true });
 }

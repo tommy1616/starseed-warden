@@ -1,10 +1,9 @@
-// Boot and the fixed-step loop; ?seed=N, ?shot=NAME and ?debug=1 keep their existing behaviour.
-// The key screens are imported first so a source summary reaches them before the large
-// simulation and drawing helpers; module evaluation has no side effects beyond definitions.
+// Boot, the fixed-step loop and the shot/debug entry points.
+// Key screens load first for the source summary; definitions have no side effects.
 import { drawHud } from './render/hud.js';
 import { drawDraft } from './render/draft.js';
 import { drawResults } from './render/results.js';
-import { createApp, SCREEN, updateApp, handleActions, dispatch, startRun, pauseGame } from './state.js';
+import { createApp, SCREEN, updateApp, handleActions, dispatch, pauseGame } from './state.js';
 import { STEP } from './config.js';
 import { seedFromText } from './rng.js';
 import { ACTION, createInput } from './input.js';
@@ -16,7 +15,12 @@ import { drawHazards, drawAirEffects, drawReticle, drawLowHealth, drawFlash, dra
 import { drawTitle } from './render/title.js';
 import { drawPause } from './render/pause.js';
 import { clearButtons, buttonAt } from './ui/buttons.js';
-import { stageShot } from './shots.js';
+import { runShot } from './shots.js';
+import { setUpgradeIconPainter } from './render/icons.js';
+import { drawUpgradeIconArt } from './render/icons-art.js';
+import { createProbe, createDebug } from './dev-probe.js';
+
+setUpgradeIconPainter(drawUpgradeIconArt);
 
 const params = new URLSearchParams(window.location.search);
 const shot = params.get('shot');
@@ -50,78 +54,8 @@ function unlockAudio() {
 window.addEventListener('pointerdown', unlockAudio, { once: true });
 window.addEventListener('keydown', unlockAudio, { once: true });
 
-/** Read-only state probe for tools; getters always reflect the live app. */
-window.__game = {
-  get state() { return app.screen; },
-  get screen() { return app.screen; },
-  get wave() { return app.world ? app.world.wave : 0; },
-  get hp() { return app.world ? Math.max(0, app.world.warden.hp) : 0; },
-  get starseedHp() { return app.world ? Math.max(0, app.world.starseed.hp) : 0; },
-  get score() { return app.world ? Math.round(app.world.score.score) : 0; },
-  get outcome() { return app.world ? app.world.outcome : null; },
-  get difficulty() { return app.difficultyId; },
-  get best() { return app.best ? app.best.score : 0; },
-  get upgrades() { return app.world ? app.world.upgrades.size : 0; },
-  get tutorialStage() { return app.world ? app.world.introHint.stage : 0; },
-  get perfectDashes() { return app.world ? app.world.perfectDashes : 0; },
-  get pollenCollected() { return app.world ? app.world.pollenCollected : 0; },
-  get oath() {
-    const oath = app.world ? app.world.oath : null;
-    return oath ? { id: oath.id, status: oath.status, progress: oath.progress, wave: oath.wave } : null;
-  },
-  get draft() {
-    return app.draft ? { oathId: app.draft.oathId, focus: app.draft.focus, cards: app.draft.cards.length } : null;
-  },
-  get focusAction() { return app.focusAction; },
-  get oathsCompleted() { return app.world ? app.world.oathsCompleted : 0; },
-  get oathBonus() { return app.world ? app.world.oathBonus : 0; },
-  get seedDamageTaken() { return app.world ? app.world.seedDamageTaken : 0; },
-  get warden() {
-    return app.world
-      ? { x: app.world.warden.x, y: app.world.warden.y, bloom: app.world.warden.bloom }
-      : null;
-  },
-  get nearestEnemy() {
-    if (!app.world) return null;
-    let best = null;
-    let bestDistance = Infinity;
-    for (const enemy of app.world.enemies) {
-      if (enemy.dead || enemy.burrowed) continue;
-      const distance = (enemy.x - app.world.warden.x) ** 2 + (enemy.y - app.world.warden.y) ** 2;
-      if (distance < bestDistance) {
-        bestDistance = distance;
-        best = { x: enemy.x, y: enemy.y, kind: enemy.kind };
-      }
-    }
-    if (app.world.boss && !app.world.boss.dead) {
-      const distance = (app.world.boss.x - app.world.warden.x) ** 2 + (app.world.boss.y - app.world.warden.y) ** 2;
-      if (distance < bestDistance) best = { x: app.world.boss.x, y: app.world.boss.y, kind: 'boss' };
-    }
-    return best;
-  },
-  get enemies() { return app.world ? app.world.enemies.length : 0; },
-  get boss() {
-    return app.world && app.world.boss
-      ? { name: app.world.boss.name, hp: app.world.boss.hp, maxHp: app.world.boss.maxHp, phase: app.world.boss.phase, state: app.world.boss.state }
-      : null;
-  },
-};
-
-if (debug) {
-  window.__debug = {
-    start() {
-      if (app.screen !== SCREEN.play) startRun(app);
-    },
-    defeat() {
-      if (app.screen !== SCREEN.play || !app.world) startRun(app);
-      app.world.warden.hp = 1;
-      app.world.lose('warden');
-    },
-    addScore(amount) {
-      if (app.world) app.world.score.score += Number(amount) || 0;
-    },
-  };
-}
+window.__game = createProbe(app);
+if (debug) window.__debug = createDebug(app);
 
 function controlFromInput(actions, pending) {
   const move = input.movement();
@@ -253,14 +187,5 @@ function runGame() {
   requestAnimationFrame(frame);
 }
 
-function runShot() {
-  stageShot(shot, app);
-  app.pointer = input.pointer;
-  requestAnimationFrame(() => {
-    drawFrame();
-    window.__shotReady = true;
-  });
-}
-
-if (isShot) runShot();
+if (isShot) runShot(app, shot, drawFrame, input.pointer);
 else runGame();

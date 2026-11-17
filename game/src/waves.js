@@ -1,7 +1,4 @@
-// The wave director: twelve waves across three biomes, each with its own composition and
-// spawn cadence, and a boss at the end of every biome. The table is data; buildWave() turns
-// one row into the spawn list the world consumes, scaling counts by the chosen difficulty
-// and flagging elites later in the run.
+// Twelve waves across three biomes, with a boss at the end of each.
 import { BIOMES, DIFFICULTIES } from './config.js';
 
 export const WAVES = [

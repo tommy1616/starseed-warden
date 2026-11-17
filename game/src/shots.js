@@ -529,6 +529,16 @@ function stageDefeat(app) {
   app.focusAction = 'again';
 }
 
+/** Boot a deterministic shot scene, draw its one frame and flag it for the capture tool. */
+export function runShot(app, name, drawFrame, pointer) {
+  stageShot(name, app);
+  app.pointer = pointer;
+  requestAnimationFrame(() => {
+    drawFrame();
+    window.__shotReady = true;
+  });
+}
+
 /**
  * Stage the named scene on `app` and return it. Unknown names fall back to the title, so a
  * malformed URL still paints something sensible.
