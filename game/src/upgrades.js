@@ -87,7 +87,7 @@ export const UPGRADES = [
     desc: '+20 maximum Warden HP, and heal 20 now.',
     apply(world) {
       world.mods.vitality += 1;
-      world.warden.maxHp = PLAYER.maxHp + world.mods.vitality * 20;
+      world.warden.maxHp = Math.round(PLAYER.maxHp * (world.guardian?.hp ?? 1)) + world.mods.vitality * 20;
       world.warden.hp = Math.min(world.warden.maxHp, world.warden.hp + 20);
     },
   },

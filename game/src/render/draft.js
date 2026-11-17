@@ -180,7 +180,8 @@ export function drawDraft(ctx, app) {
   ctx.fillStyle = 'rgba(255,238,184,0.8)';
   const biome = world ? world.biomeIndex + 1 : 1;
   const nextWave = world ? Math.min(12, world.wave + 1) : 2;
-  ctx.fillText(`CHOOSE ONE BLOOM FOR WAVE ${nextWave}  ·  BIOME ${biome}`, cx, 158);
+  const guardian = world?.guardian?.name?.toUpperCase();
+  ctx.fillText(`CHOOSE ONE BLOOM FOR WAVE ${nextWave}  ·  BIOME ${biome}${guardian ? `  ·  ${guardian}` : ''}`, cx, 158);
   ctx.fillStyle = 'rgba(143,182,198,0.7)';
   ctx.font = '600 12px system-ui, sans-serif';
   const lastOath = world?.oath;

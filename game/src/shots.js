@@ -193,7 +193,7 @@ function runToDraftOrResult(app, limitSeconds = 75) {
 function prepareWorld(app) {
   app.world = createWorld({ seed: app.seed, difficulty: app.difficulty, audio: null });
   app.screen = SCREEN.play;
-  app.world.startRun();
+  app.world.startRun(app.guardianId ?? 'seedshot');
   return app.world;
 }
 
@@ -294,6 +294,7 @@ function stagePlay(app) {
 }
 
 function stageDraft(app) {
+  app.guardianId = 'petal';
   prepareWorld(app);
   const picks = [['rapid'], ['pierce'], ['homing'], ['frost'], ['vitality']];
   const reached = advanceToWave(app, 6, picks);
@@ -317,6 +318,7 @@ function stageDraft(app) {
 }
 
 function stageBoss(app) {
+  app.guardianId = 'bloom';
   prepareWorld(app);
   applyCards(app.world, [
     'spread', 'rapid', 'pierce', 'crit', 'homing', 'magnet', 'vitality', 'orbit', 'orbit', 'thorn',
@@ -442,6 +444,7 @@ function stageBoss(app) {
 }
 
 function stageOath(app) {
+  app.guardianId = 'petal';
   prepareWorld(app);
   applyCards(app.world, ['spread', 'rapid', 'pierce', 'crit', 'homing', 'magnet', 'vitality']);
   const picks = [['spread'], ['rapid'], ['pierce'], ['crit'], ['magnet']];
@@ -569,6 +572,7 @@ export function stageShot(name, app) {
       break;
     case 'title':
     default:
+      app.guardianId = 'petal';
       app.screen = SCREEN.title;
       app.world = null;
       app.titleWorld.time = 4.4;

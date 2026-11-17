@@ -2,6 +2,7 @@
 // the Play button, the three difficulty choices, How to Play and Sound, and the saved best for
 // the selected difficulty. Every control is also reachable from the keyboard.
 import { DIFFICULTIES, FIELD, TITLE_FONT } from '../config.js';
+import { GUARDIANS } from '../guardians.js';
 import { drawBackground } from './background.js';
 import { drawEntities } from './entities.js';
 import { addButton, clearButtons, drawButtons, panel, roundedRect } from '../ui/buttons.js';
@@ -151,17 +152,33 @@ export function drawTitle(ctx, app) {
   }
 
   addButton(app.ui, {
-    x: cx - 200, y: 500, w: 190, h: 44,
+    x: cx - 200, y: 560, w: 190, h: 40,
     style: 'ghost', label: 'HOW TO PLAY', action: 'howto',
     focused: app.focusAction === 'howto',
   });
   addButton(app.ui, {
-    x: cx + 10, y: 500, w: 190, h: 44,
+    x: cx + 10, y: 560, w: 190, h: 40,
     style: 'ghost',
     label: app.soundOn ? 'SOUND ON' : 'SOUND OFF',
     action: 'sound',
     focused: app.focusAction === 'sound',
   });
+
+  const guardianTotal = GUARDIANS.length * 260 + (GUARDIANS.length - 1) * 14;
+  let guardianX = cx - guardianTotal / 2;
+  for (const guardian of GUARDIANS) {
+    addButton(app.ui, {
+      x: guardianX, y: 500, w: 260, h: 54,
+      style: 'difficulty',
+      label: guardian.name.toUpperCase(),
+      sub: guardian.tagline,
+      action: `guardian:${guardian.id}`,
+      selected: app.guardianId === guardian.id,
+      focused: app.focusAction === `guardian:${guardian.id}`,
+      color: guardian.color,
+    });
+    guardianX += 274;
+  }
 
   const best = app.best;
   const bestLine = best.score > 0
@@ -172,10 +189,10 @@ export function drawTitle(ctx, app) {
   ctx.textBaseline = 'middle';
   ctx.font = '700 13px system-ui, sans-serif';
   ctx.fillStyle = 'rgba(255,238,184,0.75)';
-  ctx.fillText(bestLine, cx, 574);
+  ctx.fillText(bestLine, cx, 622);
   ctx.font = '600 12px system-ui, sans-serif';
   ctx.fillStyle = 'rgba(143,182,198,0.62)';
-  ctx.fillText('ARROWS / ENTER FOR MENUS  ·  1 2 3 PICK DIFFICULTY  ·  M SOUND', cx, 684);
+  ctx.fillText('ARROWS / ENTER: GUARDIAN AND MENUS  ·  1 2 3: DIFFICULTY  ·  M SOUND', cx, 688);
   ctx.restore();
 
   if (app.showHowTo) {

@@ -31,7 +31,7 @@ function fireVolley(world, control) {
   const aim = aimVector(control, warden);
   const count = 1 + mods.multishot;
   const spread = count === 1 ? 0 : 0.09 + (count - 1) * 0.035;
-  const damage = PLAYER.dartDamage * (1 + 0.28 * mods.heavy);
+  const damage = PLAYER.dartDamage * (1 + 0.28 * mods.heavy) * (world.guardian?.dart ?? 1);
   const radius = PLAYER.dartRadius * (1 + 0.1 * mods.heavy);
   for (let i = 0; i < count; i += 1) {
     const offset = count === 1 ? 0 : (i / (count - 1) - 0.5) * spread * 2;
@@ -59,7 +59,7 @@ function fireVolley(world, control) {
     }
   }
   registerShot(world.score);
-  warden.fireTimer = PLAYER.fireInterval / (1 + 0.16 * mods.rapid);
+  warden.fireTimer = PLAYER.fireInterval * (world.guardian?.fire ?? 1) / (1 + 0.16 * mods.rapid);
   world.audio?.play('shoot');
   warden.recoil = 0.08;
 }
@@ -300,7 +300,7 @@ export function updatePlayer(world, dt, control) {
     checkPerfectDash(world);
     warden.dashTimer -= dtClamped;
   } else {
-    const speed = PLAYER.speed * (1 + 0.08 * mods.swift);
+    const speed = PLAYER.speed * (1 + 0.08 * mods.swift) * (world.guardian?.speed ?? 1);
     warden.x += (control.moveX ?? 0) * speed * dtClamped;
     warden.y += (control.moveY ?? 0) * speed * dtClamped;
     warden.walkPhase = (warden.walkPhase + dtClamped * 8 * Math.hypot(control.moveX ?? 0, control.moveY ?? 0)) % TAU;

@@ -1,6 +1,7 @@
 // Read-only state probes for the test tools, plus the ?debug=1 hooks. This is development
 // plumbing, not gameplay, so it stays out of the boot module; main installs it after the app.
 import { SCREEN, startRun } from './state.js';
+import { createBoss } from './bosses.js';
 
 export function createProbe(app) {
   return {
@@ -12,6 +13,9 @@ export function createProbe(app) {
     get score() { return app.world ? Math.round(app.world.score.score) : 0; },
     get outcome() { return app.world ? app.world.outcome : null; },
     get difficulty() { return app.difficultyId; },
+    get guardian() { return app.world?.guardian?.id ?? app.guardianId; },
+    get wardenMaxHp() { return app.world ? app.world.warden.maxHp : 0; },
+    get upgradeLevels() { return app.world ? Object.fromEntries(app.world.upgrades) : {}; },
     get best() { return app.best ? app.best.score : 0; },
     get upgrades() { return app.world ? app.world.upgrades.size : 0; },
     get tutorialStage() { return app.world ? app.world.introHint.stage : 0; },
@@ -54,7 +58,7 @@ export function createProbe(app) {
     get enemies() { return app.world ? app.world.enemies.length : 0; },
     get boss() {
       return app.world && app.world.boss
-        ? { name: app.world.boss.name, hp: app.world.boss.hp, maxHp: app.world.boss.maxHp, phase: app.world.boss.phase, state: app.world.boss.state }
+        ? { name: app.world.boss.name, hp: app.world.boss.hp, maxHp: app.world.boss.maxHp, phase: app.world.boss.phase, state: app.world.boss.state, x: app.world.boss.x, y: app.world.boss.y }
         : null;
     },
   };
@@ -69,6 +73,35 @@ export function createDebug(app) {
       if (app.screen !== SCREEN.play || !app.world) startRun(app);
       app.world.warden.hp = 1;
       app.world.lose('warden');
+    },
+    /** Injected wave-12 boss for a short playability probe; this is not a full run. */
+    boss() {
+      if (app.screen !== SCREEN.play || !app.world) startRun(app);
+      const world = app.world;
+      world.wave = 12;
+      world.biomeIndex = 2;
+      world.phase = 'active';
+      world.bannerTimer = 0;
+      world.pendingBoss = null;
+      world.spawnQueue = [];
+      world.enemies = [];
+      world.bullets = [];
+      world.hazards = [];
+      world.pickups = [];
+      world.outcome = null;
+      world.requestResults = null;
+      world.endTimer = 0;
+      world.warden.x = 640;
+      world.warden.y = 584;
+      world.warden.maxHp = Math.max(world.warden.maxHp, 500);
+      world.warden.hp = world.warden.maxHp;
+      world.warden.invulnerable = 0;
+      world.warden.bloom = 100;
+      world.starseed.hp = world.starseed.maxHp;
+      const boss = createBoss(world, 'crown');
+      boss.x = 640;
+      boss.y = 238;
+      boss.attackTimer = 1.2;
     },
     addScore(amount) {
       if (app.world) app.world.score.score += Number(amount) || 0;

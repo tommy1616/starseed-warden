@@ -1,4 +1,5 @@
 // Screen machine: title, play, draft, pause and results; it owns the run and the best record.
+import { GUARDIANS, guardianById } from './guardians.js';
 import { DIFFICULTIES } from './config.js';
 import { createWorld } from './world.js';
 import { difficultyById } from './waves.js';
@@ -27,6 +28,7 @@ export function createApp(options = {}) {
     previousScreen: SCREEN.title,
     difficultyId: difficulty.id,
     difficulty,
+    guardianId: options.guardianId ?? 'seedshot',
     world: null,
     titleWorld: null,
     runIndex: 0,
@@ -68,6 +70,13 @@ export function setDifficulty(app, id) {
   app.audio?.play('select');
 }
 
+/** Pick the start-of-run guardian; it is a build choice, not a per-wave upgrade. */
+export function setGuardian(app, id) {
+  app.guardianId = guardianById(id).id;
+  app.focusAction = `guardian:${app.guardianId}`;
+  app.audio?.play('select');
+}
+
 function recordProgress(app) {
   if (app.world && !app.results) {
     app.best = writeBest(app.difficultyId, app.world.score.score, app.world.wave);
@@ -79,14 +88,14 @@ export function startRun(app) {
   app.runIndex += 1;
   const seed = app.shotMode ? app.seed : (Math.random() * 4294967296) >>> 0;
   app.world = createWorld({ seed, difficulty: app.difficulty, audio: app.audio });
-  app.world.startRun();
+  app.world.startRun(app.guardianId);
   app.screen = SCREEN.play;
   app.previousScreen = SCREEN.play;
   app.draft = null;
   app.results = null;
   app.focusAction = 'play';
   app.screenTime = 0;
-  app.announce('Wave 1: Moonlit Meadow. Defend the Starseed. Follow the first-night prompts.');
+  app.announce(`${guardianById(app.guardianId).name}: Wave 1, Moonlit Meadow. Defend the Starseed.`);
   app.audio?.setScene(0, false);
 }
 
@@ -166,7 +175,7 @@ export function endRun(app) {
   const seedFraction = world.starseed.hp / world.starseed.maxHp;
   let stars = 0;
   if (victory) stars = seedFraction >= 0.8 ? 3 : seedFraction >= 0.5 ? 2 : 1;
-  const upgradesTaken = ownedCards(world).reduce((sum, entry) => sum + entry.level, 0);
+  const upgradesTaken = Math.max(0, ownedCards(world).reduce((sum, entry) => sum + entry.level, 0) - (world.startingUpgrades ?? 0));
   app.results = {
     victory,
     stars,
@@ -212,7 +221,7 @@ export function toggleHowTo(app) {
 }
 
 const FOCUS = {
-  title: ['play', 'diff:sprout', 'diff:warden', 'diff:eclipse', 'howto', 'sound'],
+  title: ['play', ...GUARDIANS.map((guardian) => `guardian:${guardian.id}`), 'diff:sprout', 'diff:warden', 'diff:eclipse', 'howto', 'sound'],
   paused: ['resume', 'restart', 'quit', 'sound'],
   results: ['again', 'title'],
 };
@@ -254,6 +263,8 @@ export function dispatch(app, action) {
   } else if (action.startsWith('diff:')) {
     setDifficulty(app, action.slice(5));
     app.focusAction = action;
+  } else if (action.startsWith('guardian:')) {
+    setGuardian(app, action.slice(9));
   } else if (action.startsWith('card:')) {
     pickDraft(app, Number(action.slice(5)));
   } else if (action.startsWith('oath:') && app.screen === SCREEN.draft && app.draft) {

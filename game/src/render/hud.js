@@ -69,7 +69,7 @@ function drawWardenPanel(ctx, world) {
   const h = 72;
   panel(ctx, x, y, w, h, { fill: 'rgba(6,16,28,0.94)', edge: 'rgba(126,232,255,0.22)', radius: 14 });
   heart(ctx, x + 24, y + 27, 20, COLORS.hp);
-  label(ctx, 'WARDEN', x + 42, y + 20, 13, 'rgba(234,255,248,0.75)', 'left', 800);
+  label(ctx, world.guardian ? `WARDEN · ${world.guardian.name.toUpperCase()}` : 'WARDEN', x + 42, y + 20, 13, 'rgba(234,255,248,0.75)', 'left', 800);
   const fraction = warden.hp / warden.maxHp;
   bar(ctx, x + 42, y + 34, 220, 12, fraction, fraction < 0.3 ? '#ff5b4a' : '#ff6b8a', 'rgba(255,107,138,0.16)', fraction < 0.3 ? 10 : 0);
   label(ctx, `${Math.ceil(warden.hp)} / ${Math.round(warden.maxHp)}`, x + 42, y + 56, 12, 'rgba(234,255,248,0.72)', 'left', 600);
@@ -253,87 +253,6 @@ function drawBossBar(ctx, world) {
   bar(ctx, x + 20, y + 29, w - 40, 13, fraction, boss.type === 'crown' && boss.phase >= 3 ? '#ff5b4a' : '#ff5bd0', 'rgba(255,91,208,0.16)', 8);
 }
 
-const INTRO_STEPS = [
-  {
-    key: 'WASD',
-    title: 'MOVE',
-    detail: 'Arrow keys work too. Stay between the Hollow and the Starseed.',
-  },
-  {
-    key: 'HOLD LMB / J',
-    title: 'FIRE SEED-DARTS',
-    detail: 'Aim with the mouse; every dart flies toward the pointer.',
-  },
-  {
-    key: 'SPACE / SHIFT',
-    title: 'DASH',
-    detail: 'Perfect Dash: graze a thorn mid-dash to recycle it and gain 12 Bloom.',
-  },
-  {
-    key: 'POLLEN',
-    title: 'CHARGE BLOOM',
-    detail: 'Walk over golden pollen. Press E or right-click when the meter is full.',
-  },
-  {
-    key: 'READY',
-    title: 'THE GLADE IS YOURS',
-    detail: 'Move, shoot, dash and Bloom — every loop feeds the next.',
-  },
-];
-
-function drawIntroHint(ctx, world) {
-  const hint = world.introHint;
-  if (!hint || hint.alpha <= 0.01 || world.wave !== 1) return;
-  const step = INTRO_STEPS[Math.min(INTRO_STEPS.length - 1, hint.stage)];
-  const width = 680;
-  const height = 74;
-  const x = (FIELD.width - width) / 2;
-  const y = 566;
-  ctx.save();
-  ctx.globalAlpha = Math.min(1, hint.alpha);
-  panel(ctx, x, y, width, height, { fill: 'rgba(5,14,28,0.82)', edge: 'rgba(126,232,255,0.28)', radius: 14 });
-
-  ctx.font = '800 9px system-ui, sans-serif';
-  ctx.fillStyle = 'rgba(255,238,184,0.72)';
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(
-    `FIRST NIGHT  ·  STEP ${Math.min(4, hint.stage + 1)} / 4`,
-    x + 18,
-    y + 13,
-  );
-
-  const dotStart = x + width - 18 - 3 * 13;
-  for (let i = 0; i < 4; i += 1) {
-    ctx.fillStyle = i < hint.stage ? '#b6ffe6' : i === hint.stage ? '#ffd76a' : 'rgba(143,182,198,0.24)';
-    ctx.beginPath();
-    ctx.arc(dotStart + i * 13, y + 13, i === hint.stage ? 3 : 2.4, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  ctx.font = '800 11px system-ui, sans-serif';
-  const keyWidth = Math.max(34, ctx.measureText(step.key).width + 16);
-  roundedRect(ctx, x + 18, y + 24, keyWidth, 22, 6);
-  ctx.fillStyle = 'rgba(182,255,230,0.14)';
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(182,255,230,0.45)';
-  ctx.lineWidth = 1;
-  ctx.stroke();
-  ctx.fillStyle = '#b6ffe6';
-  ctx.textAlign = 'center';
-  ctx.fillText(step.key, x + 18 + keyWidth / 2, y + 36);
-
-  ctx.textAlign = 'left';
-  ctx.font = '800 12px system-ui, sans-serif';
-  ctx.fillStyle = '#eafff8';
-  ctx.fillText(step.title, x + 18 + keyWidth + 10, y + 36);
-
-  ctx.font = '600 12px system-ui, sans-serif';
-  ctx.fillStyle = 'rgba(214,238,246,0.82)';
-  ctx.fillText(step.detail, x + 18, y + 59);
-  ctx.restore();
-}
-
 function drawControlsHint(ctx, world) {
   const text = 'WASD move · aim mouse · fire · SPACE dash (graze = Bloom) · E bloom · ESC pause';
   ctx.font = '600 11px system-ui, -apple-system, "Segoe UI", sans-serif';
@@ -351,7 +270,6 @@ export function drawHud(ctx, world) {
   drawUpgradeRow(ctx, world);
   drawBossBar(ctx, world);
   drawOathPanel(ctx, world);
-  drawIntroHint(ctx, world);
   drawControlsHint(ctx, world);
 }
 

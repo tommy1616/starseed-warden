@@ -1,5 +1,4 @@
 // Boot, the fixed-step loop and the shot/debug entry points.
-// Key screens load first for the source summary; definitions have no side effects.
 import { drawHud } from './render/hud.js';
 import { drawDraft } from './render/draft.js';
 import { drawResults } from './render/results.js';
@@ -19,6 +18,7 @@ import { runShot } from './shots.js';
 import { setUpgradeIconPainter } from './render/icons.js';
 import { drawUpgradeIconArt } from './render/icons-art.js';
 import { createProbe, createDebug } from './dev-probe.js';
+import { drawIntroHint } from './render/intro.js';
 
 setUpgradeIconPainter(drawUpgradeIconArt);
 
@@ -81,6 +81,7 @@ function drawPlay(ctx, world) {
   drawLowHealth(ctx, world);
   drawFlash(ctx, world.camera);
   drawHud(ctx, world);
+  drawIntroHint(ctx, world);
   drawWaveBanner(ctx, world);
 }
 

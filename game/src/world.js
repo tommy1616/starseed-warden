@@ -13,6 +13,7 @@ import { resolveDarts, resolveBullets, resolveBodies, damageEnemy, damageInRadiu
 import { dropPollen, updatePickups } from './pickups.js';
 import { buildWave, TOTAL_WAVES, biomeIndexForWave, waveTitle, BOSS_NAMES } from './waves.js';
 import { beginOath, updateOath, settleOath } from './oaths.js';
+import { applyGuardian } from './guardians.js';
 
 function createDecor(rng) {
   const fireflies = [];
@@ -180,6 +181,8 @@ export function createWorld(options) {
     oathBonus: 0,
     oath: null,
     oathNotice: null,
+    guardian: null,
+    startingUpgrades: 0,
     biomeIndex: 0,
     hurtFlash: 0,
     introHint: {
@@ -310,11 +313,12 @@ export function createWorld(options) {
     beginOath(world, oathId);
   };
 
-  world.startRun = () => {
+  world.startRun = (guardianId = 'seedshot') => {
     world.wave = 1;
     world.runTime = 0;
     startWave(1);
     beginOath(world, 'none');
+    applyGuardian(world, guardianId);
   };
 
   function updateIntroHint(dt, control) {
