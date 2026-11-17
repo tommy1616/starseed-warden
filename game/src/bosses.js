@@ -1,7 +1,4 @@
-// The three biome bosses: the Bramble Matron (vines, charges, thorn rings), the Spore Tyrant
-// (spore clouds, split volleys, summons) and the three-phase Withering Crown (bullet rings,
-// telegraphed beams, spirals and elites). Each is a bigger enemy with its own attack script;
-// combat.js owns what happens when it takes damage or dies.
+// The three biome bosses and their attack scripts; combat.js resolves damage and death.
 import { ARENA, FIELD } from './config.js';
 import { addArc, addRing, burst } from './particles.js';
 import { aimedFan, bulletRing, spawnBullet, spawnHazard, sporeRing } from './projectiles.js';

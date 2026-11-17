@@ -1,7 +1,4 @@
-// Score, combo and run statistics. A kill inside the combo window extends the chain; the
-// multiplier grows with the chain and is paid on every kill, so sweeping a crowd quickly is
-// worth far more than picking it off. Wave clears and the Starseed's remaining health add
-// their own bonuses. All of it lives in one small object the HUD and results read.
+// Score, combo and run statistics; the HUD and results read this one object.
 import { FEEL, SCORE } from './config.js';
 
 export function createScore() {

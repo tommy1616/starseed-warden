@@ -1,6 +1,4 @@
-// Visual debris only: sparks, ink flakes, pollen bursts, expanding rings, short lightning
-// arcs, floating damage numbers and dash after-images. Nothing here touches the rules. The
-// simulation owns the lists and culls them; the renderer only reads them.
+// Decorative sparks, rings, arcs, afterimages and floating numbers; rules never depend on them.
 import { FEEL } from './config.js';
 
 export function createParticles() {

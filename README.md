@@ -18,8 +18,11 @@ Then open http://localhost:8080.
 
 - **Move** with WASD or the arrow keys; **aim** with the mouse.
 - **Hold left mouse or J** to fire seed-darts; **Space or Shift** dashes with a moment of invulnerability.
+- **Perfect Dash:** brush an enemy shot during a dash without taking damage. The shot is recycled and you gain 12 Bloom. At most one reward per dash; it adds no score, cooldown reset or extra invulnerability.
 - **E or right mouse** releases Bloom when the pollen meter is full; it damages the Hollow and clears nearby shots.
 - **Esc or P** pauses, **M** toggles sound. Survive all twelve waves and defeat The Withering Crown; if the Warden or the Starseed falls, the run ends.
+- The first wave teaches one step at a time (move, fire, dash, collect pollen). Each prompt advances when you perform the action and never blocks play.
+- **Bloom Draft** cards mark a **SYNERGY** when the card combines with an upgrade you already own, using the real counts and effects. Draft picks stack; the run keeps the same twelve-wave loop and original art.
 
 ## Project layout
 
@@ -30,10 +33,10 @@ Then open http://localhost:8080.
 - `game/src/state.js` — title / play / draft / pause / results screen machine.
 - `game/src/config.js`, `palette.js` — tuning, geometry and the night-garden palette.
 - `game/src/world.js` — simulation orchestration, wave hand-offs and run outcome.
-- `game/src/player.js`, `starseed.js` — the Warden's kit and the Starseed's shell.
+- `game/src/player.js`, `starseed.js` — the Warden's kit (including Perfect Dash) and the Starseed's shell.
 - `game/src/enemies.js`, `bosses.js`, `projectiles.js`, `pickups.js` — the Hollow, its bosses, shots and pollen.
 - `game/src/waves.js` — wave director and biome table.
-- `game/src/upgrades.js` — the 23-card Bloom Draft pool and stacking effects.
+- `game/src/upgrades.js` — the 23-card Bloom Draft pool, stacking effects and real synergy hints.
 - `game/src/combat.js`, `scoring.js`, `particles.js`, `camera.js` — hits, score, debris, shake and hit-stop.
 - `game/src/audio.js`, `music.js` — synthesized SFX and the generative ambient score.
 - `game/src/input.js`, `rng.js`, `storage.js` — controls, seeded randomness and saved bests.

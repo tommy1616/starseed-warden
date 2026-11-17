@@ -97,9 +97,12 @@ function drawHowTo(ctx, app) {
     ctx.font = '500 16px system-ui, sans-serif';
     ctx.fillStyle = 'rgba(234,255,248,0.88)';
     ctx.fillText(text, x + 190, lineY);
-    lineY += 44;
+    lineY += 40;
   }
   ctx.textAlign = 'center';
+  ctx.font = '700 13px system-ui, sans-serif';
+  ctx.fillStyle = '#ffd76a';
+  ctx.fillText('PERFECT DASH  ·  graze an enemy shot mid-dash to recycle it and gain 12 Bloom.', FIELD.width / 2, y + 386);
   ctx.font = '600 13px system-ui, sans-serif';
   ctx.fillStyle = 'rgba(143,182,198,0.8)';
   ctx.fillText('H or the Close button hides this panel.', FIELD.width / 2, y + h - 84);

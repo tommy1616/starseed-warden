@@ -1,7 +1,4 @@
-// Keyboard and pointer input in logical playfield coordinates. Held state answers the
-// simulation (movement, aim, firing); edge presses become one-shot ACTION flags so a tap
-// between frames is never lost or counted twice; pointer presses also queue clicks for the
-// menus. The renderer supplies toLogical(), so the same code works at any window size.
+// Keyboard/pointer input in logical field coordinates: held state plus one-shot ACTION flags.
 
 export const ACTION = {
   confirm: 1,

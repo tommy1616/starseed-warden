@@ -1,7 +1,4 @@
-// The Bloom Draft's card pool and its effects. Every card is data with one apply() that
-// nudges the run's modifiers; the simulation reads those modifiers each step, so stacks
-// combine rather than replacing one another (spread + pierce + frost, chain + crit, and so on).
-// Rarity only changes how often a card is offered, never its stack cap.
+// Bloom Draft cards, stacking effects, real synergy hints and pollen helpers.
 import { PLAYER, PICKUP } from './config.js';
 
 export const UPGRADES = [
@@ -202,5 +199,114 @@ export function magnetRadius(world) {
 }
 
 export function bloomPerMote(world) {
-  return PLAYER.bloomPerMote + world.mods.magnet * 2;
+  return (PLAYER.bloomPerMote + world.mods.magnet * 2) * (1 + 0.25 * world.mods.bloomCharge);
+}
+
+// Only pairs with a real interaction in the simulation belong here. Each rule names the
+// owned partner card; `text` receives that partner's level so the card can state the actual
+// counts instead of inventing a bonus.
+const SYNERGY_RULES = {
+  spread: [
+    { with: 'pierce', text: (w) => `Thorn Tip: all ${2 + ownedLevel(w, 'spread')} darts pierce ${ownedLevel(w, 'pierce')}.` },
+    { with: 'heavy', text: (w) => `Heavy Seed: +${28 * ownedLevel(w, 'heavy')}% damage on all ${2 + ownedLevel(w, 'spread')} darts.` },
+    { with: 'crit', text: () => 'Keen Bloom: every dart in the fan rolls crit.' },
+    { with: 'frost', text: () => 'Frost Seeds: each dart can chill a different target.' },
+  ],
+  pierce: [
+    { with: 'spread', text: (w, next) => `Spread Seed: your ${1 + ownedLevel(w, 'spread')} darts each pierce +${next}.` },
+    { with: 'frost', text: () => 'Frost Seeds: every pierced enemy is chilled.' },
+    { with: 'crit', text: () => 'Keen Bloom: each pierced hit rolls crit separately.' },
+    { with: 'chain', text: () => 'Spark Vine: piercing a crowd feeds more arcs.' },
+  ],
+  rapid: [
+    { with: 'crit', text: () => 'Keen Bloom: more shots per second means more crits.' },
+    { with: 'heavy', text: () => 'Heavy Seed: more heavy darts per second.' },
+    { with: 'chain', text: () => 'Spark Vine: more hits means more arcs.' },
+    { with: 'frost', text: () => 'Frost Seeds: chill is refreshed more often.' },
+  ],
+  heavy: [
+    { with: 'spread', text: (w, next) => `Spread Seed: +${28 * next}% damage on every dart in the fan.` },
+    { with: 'chain', text: () => 'Spark Vine: arc damage scales with dart damage.' },
+    { with: 'crit', text: () => 'Keen Bloom: crits double these heavier hits.' },
+  ],
+  homing: [
+    { with: 'ricochet', text: () => 'Ricoherb: the dart keeps curving after a bounce.' },
+    { with: 'frost', text: () => 'Frost Seeds: seeking darts carry chill to evasive targets.' },
+    { with: 'pierce', text: () => 'Thorn Tip: seeking darts line up extra pierces.' },
+  ],
+  orbit: [
+    { with: 'lifesteal', text: (w, next, partner) => `Sap Siphon: petal kills heal ${2 * partner} HP.` },
+  ],
+  thorn: [
+    { with: 'lifesteal', text: (w, next, partner) => `Sap Siphon: briar kills heal ${2 * partner} HP.` },
+  ],
+  dashTrail: [
+    { with: 'flit', text: () => 'Flit: faster dash recharge leaves more burning wakes.' },
+  ],
+  lifesteal: [
+    { with: 'orbit', text: (w, next) => `Orbiting Petals: each petal kill can heal ${2 * next} HP.` },
+    { with: 'thorn', text: (w, next) => `Thorn Aura: each briar kill can heal ${2 * next} HP.` },
+  ],
+  magnet: [
+    { with: 'satchel', text: () => 'Pollen Satchel: extra motes, all pulled from farther.' },
+    { with: 'bloomCharge', text: (w, next, partner) => `Wild Bloom: wider pickup feeds Bloom ${25 * partner}% faster.` },
+  ],
+  crit: [
+    { with: 'rapid', text: () => 'Quick Pollen: more shots per second, more crits.' },
+    { with: 'spread', text: () => 'Spread Seed: every dart in the fan rolls crit.' },
+    { with: 'pierce', text: () => 'Thorn Tip: each pierced hit rolls crit separately.' },
+    { with: 'heavy', text: () => 'Heavy Seed: crits double a heavier dart.' },
+  ],
+  ricochet: [
+    { with: 'crit', text: () => 'Keen Bloom: bounces keep the dart crit chance.' },
+    { with: 'frost', text: () => 'Frost Seeds: bounced hits chill too.' },
+    { with: 'homing', text: () => 'Seeking Seed: the dart re-aims after a bounce.' },
+    { with: 'chain', text: () => 'Spark Vine: bounces and arcs cover a packed glade.' },
+  ],
+  frost: [
+    { with: 'chain', text: () => 'Spark Vine: chain arcs now carry the chill.' },
+    { with: 'pierce', text: () => 'Thorn Tip: every pierced enemy is chilled.' },
+    { with: 'spread', text: () => 'Spread Seed: each dart can chill a different target.' },
+    { with: 'ricochet', text: () => 'Ricoherb: bounced hits chill too.' },
+  ],
+  chain: [
+    { with: 'frost', text: () => 'Frost Seeds: chain arcs now carry the chill.' },
+    { with: 'heavy', text: () => 'Heavy Seed: arc damage scales with dart damage.' },
+    { with: 'spread', text: () => 'Spread Seed: more darts means more arcs.' },
+    { with: 'rapid', text: () => 'Quick Pollen: more hits means more arcs.' },
+  ],
+  bloomCharge: [
+    { with: 'magnet', text: (w, next) => `Pollen Magnet: a wider pull feeds Bloom ${25 * next}% faster.` },
+    { with: 'satchel', text: () => 'Pollen Satchel: extra motes fill the meter faster.' },
+    { with: 'bloomPower', text: () => 'Bright Bloom: reach the stronger blast sooner.' },
+  ],
+  bloomPower: [
+    { with: 'linger', text: (w, next) => `Lasting Bloom: lingering ticks burn ${15 * next}% harder.` },
+    { with: 'bloomCharge', text: () => 'Wild Bloom: charge the stronger blast sooner.' },
+  ],
+  flit: [
+    { with: 'dashTrail', text: () => 'Verdant Wake: more dashes means more burning trails.' },
+  ],
+  linger: [
+    { with: 'bloomPower', text: (w, next, partner) => `Bright Bloom: lingering ticks burn ${15 * partner}% harder.` },
+  ],
+  satchel: [
+    { with: 'magnet', text: () => 'Pollen Magnet: extra motes are pulled from farther.' },
+    { with: 'bloomCharge', text: () => 'Wild Bloom: extra motes fill Bloom faster.' },
+  ],
+};
+
+/** Up to two real combos between this card and upgrades already owned. */
+export function draftSynergies(world, card) {
+  const rules = SYNERGY_RULES[card.id];
+  if (!rules || !world) return [];
+  const next = ownedLevel(world, card.id) + 1;
+  const lines = [];
+  for (const rule of rules) {
+    const partner = ownedLevel(world, rule.with);
+    if (partner <= 0) continue;
+    lines.push(typeof rule.text === 'function' ? rule.text(world, next, partner) : rule.text);
+    if (lines.length >= 2) break;
+  }
+  return lines;
 }

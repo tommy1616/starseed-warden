@@ -1,6 +1,4 @@
-// The transient layer: telegraph warnings under the creatures, then sparks, shards, shock
-// rings, lightning arcs, dash ghosts, floating damage numbers, the low-health vignette and the
-// brief full-screen flash. Everything reads the simulation's particle lists; nothing mutates them.
+// Transient canvas effects: telegraphs, sparks, rings, numbers, vignette and flash.
 import { FEEL, FIELD } from '../config.js';
 
 const TAU = Math.PI * 2;

@@ -1,6 +1,4 @@
-// The screen machine around the simulation: title, play, Bloom Draft, pause and results. It owns
-// the run's world, the best-score record for the chosen difficulty, menu focus and the results
-// summary. main.js asks it to advance, draw and react to clicks/keys; it never draws by itself.
+// Screen machine: title, play, draft, pause and results; it owns the run and the best record.
 import { DIFFICULTIES } from './config.js';
 import { createWorld } from './world.js';
 import { difficultyById } from './waves.js';
@@ -87,7 +85,7 @@ export function startRun(app) {
   app.results = null;
   app.focusAction = 'play';
   app.screenTime = 0;
-  app.announce(`Wave 1: Moonlit Meadow. Defend the Starseed.`);
+  app.announce('Wave 1: Moonlit Meadow. Defend the Starseed. Follow the first-night prompts.');
   app.audio?.setScene(0, false);
 }
 

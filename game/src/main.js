@@ -1,13 +1,9 @@
-// Boot and the one loop. The simulation advances in fixed 1/60 s steps while the renderer paints
-// at the display's rate; screens are chosen by the app state machine. ?seed=N fixes a run,
-// ?shot=NAME stages a deterministic screenshot scene, and ?debug=1 adds a defeat hook for the
-// playtest tool. No network, no build step, no image or audio files.
+// Boot and the fixed-step loop; ?seed=N, ?shot=NAME and ?debug=1 keep their existing behaviour.
 import { STEP } from './config.js';
 import { seedFromText } from './rng.js';
 import { ACTION, createInput } from './input.js';
 import { createAudio } from './audio.js';
 import { createApp, SCREEN, updateApp, handleActions, dispatch, startRun, pauseGame } from './state.js';
-import { stageShot } from './shots.js';
 import { createView } from './render/view.js';
 import { drawBackground } from './render/background.js';
 import { drawEntities } from './render/entities.js';
@@ -18,6 +14,7 @@ import { drawDraft } from './render/draft.js';
 import { drawPause } from './render/pause.js';
 import { drawResults } from './render/results.js';
 import { clearButtons, buttonAt } from './ui/buttons.js';
+import { stageShot } from './shots.js';
 
 const params = new URLSearchParams(window.location.search);
 const shot = params.get('shot');
@@ -63,6 +60,9 @@ window.__game = {
   get difficulty() { return app.difficultyId; },
   get best() { return app.best ? app.best.score : 0; },
   get upgrades() { return app.world ? app.world.upgrades.size : 0; },
+  get tutorialStage() { return app.world ? app.world.introHint.stage : 0; },
+  get perfectDashes() { return app.world ? app.world.perfectDashes : 0; },
+  get pollenCollected() { return app.world ? app.world.pollenCollected : 0; },
   get warden() {
     return app.world
       ? { x: app.world.warden.x, y: app.world.warden.y, bloom: app.world.warden.bloom }

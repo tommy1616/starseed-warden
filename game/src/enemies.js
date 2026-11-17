@@ -1,7 +1,4 @@
-// The Hollow: eight regular creature kinds plus the splitter's minis, each with its own shape,
-// colour and behaviour, and elite variants that glow and hit harder later in the run. Enemies
-// choose between the Warden and the Starseed as their target; the wave director decides how
-// many and which kinds arrive.
+// The eight Hollow kinds, splitter minions, targeting and elite variants.
 import { ARENA } from './config.js';
 import { addArc, addParticle, burst } from './particles.js';
 import { aimedFan, spawnBullet, spawnHazard } from './projectiles.js';

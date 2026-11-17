@@ -1,7 +1,4 @@
-// Deterministic screenshot scenes behind ?shot=play|title|draft|boss|victory|defeat. Each scene
-// builds a real world from the URL seed, runs the real fixed-step simulation with a simple
-// autopilot and scripted Bloom picks, then leaves one frame for main.js to paint. No wall clock,
-// no random unseeded rolls: the same URL always produces the same picture.
+// Deterministic ?shot= scenes: build a real world, run the fixed step with an autopilot, leave one frame.
 import { STEP } from './config.js';
 import { createWorld } from './world.js';
 import { createBoss } from './bosses.js';

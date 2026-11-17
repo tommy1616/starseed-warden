@@ -1,6 +1,4 @@
-// Anything that flies: the Warden's seed-darts, the Hollow's thorns and spores, and the
-// telegraphed hazards bosses paint on the glade (vine circles and beams). Movement lives here;
-// what a hit does to a creature belongs to combat.js.
+// Flying things and boss telegraphs: movement here, hit resolution in combat.js.
 import { ARENA, FIELD, PLAYER } from './config.js';
 import { addParticle } from './particles.js';
 import { hurtWarden, hurtStarseed } from './combat.js';

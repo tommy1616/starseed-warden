@@ -1,6 +1,4 @@
-// The creatures and things of the glade: the Warden, the Starseed, eight Hollow kinds, the
-// bosses, pollen, darts, enemy shots, petals and dash trails. Shapes are drawn directly with
-// canvas paths; the luminous parts are translucent additive circles rather than image assets.
+// The glade's creatures, pollen, darts and trails, drawn with canvas paths and additive glows.
 import { PLAYER } from '../config.js';
 
 const TAU = Math.PI * 2;

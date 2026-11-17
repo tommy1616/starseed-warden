@@ -1,12 +1,11 @@
-// Between waves the glade dims and three Bloom cards rise out of it. Each card shows its
-// rarity border, a code-drawn icon, its name, a one-line effect, the stack the Warden already
-// owns and the key that takes it. Cards can be clicked or picked with 1/2/3, arrows and Enter.
+// Bloom Draft cards: rarity, icon, effect, owned stack and real synergy hints; click or press 1/2/3.
 import { FIELD, TITLE_FONT } from '../config.js';
 import { RARITY } from '../palette.js';
 import { drawBackground } from './background.js';
 import { drawEntities } from './entities.js';
 import { drawAirEffects, drawHazards } from './effects.js';
 import { drawUpgradeIcon } from './icons.js';
+import { draftSynergies } from '../upgrades.js';
 import { addButton, clearButtons, drawButtons, panel, roundedRect } from '../ui/buttons.js';
 
 function wrapText(ctx, text, maxWidth) {
@@ -29,6 +28,31 @@ function wrapText(ctx, text, maxWidth) {
 function easeOut(value) {
   const t = Math.max(0, Math.min(1, value));
   return 1 - (1 - t) * (1 - t);
+}
+
+/** Only real combos with owned cards are printed; three short lines keep the card legible. */
+function drawSynergies(ctx, world, card, x, drawY, w) {
+  if (!world) return;
+  const lines = draftSynergies(world, card);
+  if (lines.length === 0) return;
+  const wrapped = [];
+  ctx.font = '600 11.5px system-ui, sans-serif';
+  for (const text of lines) {
+    for (const part of wrapText(ctx, `· ${text}`, w - 48)) {
+      if (wrapped.length >= 3) break;
+      wrapped.push(part);
+    }
+    if (wrapped.length >= 3) break;
+  }
+  ctx.textAlign = 'center';
+  ctx.font = '800 9px system-ui, sans-serif';
+  ctx.fillStyle = 'rgba(255,215,106,0.86)';
+  ctx.fillText('SYNERGY WITH YOUR BUILD', x + w / 2, drawY + 274);
+  ctx.font = '600 11.5px system-ui, sans-serif';
+  ctx.fillStyle = 'rgba(255,238,184,0.92)';
+  for (let i = 0; i < wrapped.length; i += 1) {
+    ctx.fillText(wrapped[i], x + w / 2, drawY + 292 + i * 16);
+  }
 }
 
 function drawCard(ctx, app, card, index, x, y, w, h, time, dimmed) {
@@ -83,6 +107,12 @@ function drawCard(ctx, app, card, index, x, y, w, h, time, dimmed) {
   ctx.fillStyle = rarity.color;
   ctx.fillText(rarity.label.toUpperCase(), x + w / 2, drawY + 28);
 
+  const owned = app.world ? (app.world.upgrades.get(card.id) ?? 0) : 0;
+  ctx.font = '800 9px system-ui, sans-serif';
+  ctx.textAlign = 'right';
+  ctx.fillStyle = owned > 0 ? rarity.color : 'rgba(143,182,198,0.75)';
+  ctx.fillText(owned > 0 ? `STACK ${owned}/${card.maxLevel}` : `NEW · 0/${card.maxLevel}`, x + w - 18, drawY + 28);
+
   const iconY = drawY + 94;
   ctx.save();
   ctx.beginPath();
@@ -107,18 +137,14 @@ function drawCard(ctx, app, card, index, x, y, w, h, time, dimmed) {
   ctx.lineTo(x + w - 34, drawY + 186);
   ctx.stroke();
 
-  ctx.font = '500 14px system-ui, sans-serif';
+  ctx.font = '500 13.5px system-ui, sans-serif';
   ctx.fillStyle = 'rgba(214,238,246,0.88)';
   const lines = wrapText(ctx, card.desc, w - 48);
   lines.slice(0, 3).forEach((text, lineIndex) => {
-    ctx.fillText(text, x + w / 2, drawY + 214 + lineIndex * 21);
+    ctx.fillText(text, x + w / 2, drawY + 208 + lineIndex * 20);
   });
 
-  const owned = app.world ? (app.world.upgrades.get(card.id) ?? 0) : 0;
-  ctx.font = '700 11px system-ui, sans-serif';
-  ctx.fillStyle = owned > 0 ? rarity.color : 'rgba(143,182,198,0.75)';
-  const stackText = owned > 0 ? `STACK ${owned} / ${card.maxLevel}` : `NEW  ·  STACK 0 / ${card.maxLevel}`;
-  ctx.fillText(stackText, x + w / 2, drawY + h - 38);
+  drawSynergies(ctx, app.world, card, x, drawY, w);
 
   ctx.fillStyle = '#07231f';
   ctx.beginPath();
@@ -174,11 +200,11 @@ export function drawDraft(ctx, app) {
   clearButtons(app.ui);
   const cards = app.draft ? app.draft.cards : [];
   const w = 280;
-  const h = 336;
+  const h = 360;
   const gap = 26;
   const total = cards.length * w + (cards.length - 1) * gap;
   let x = (FIELD.width - total) / 2;
-  const y = 218;
+  const y = 202;
   for (let i = 0; i < cards.length; i += 1) {
     drawCard(ctx, app, cards[i], i, x, y, w, h, app.ui.time, false);
     addButton(app.ui, {
@@ -195,7 +221,7 @@ export function drawDraft(ctx, app) {
   ctx.fillStyle = 'rgba(234,255,248,0.65)';
   ctx.fillText('1 / 2 / 3  OR  ARROWS + ENTER', cx, 628);
   ctx.fillStyle = 'rgba(143,182,198,0.55)';
-  ctx.fillText('Upgrades combine: stacks of a card grow its bloom.', cx, 652);
+  ctx.fillText('SYNERGY lines are real combinations with upgrades you already own.', cx, 652);
   ctx.restore();
 
   drawButtons(ctx, app.ui, app.pointer ?? null, app.ui.time);

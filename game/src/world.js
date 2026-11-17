@@ -1,7 +1,4 @@
-// The run's simulation, and the one place that decides the order of a fixed step. It owns the
-// volatile state (the Warden, the Starseed, creatures, shots, pollen, particles), runs the wave
-// director, and raises the two hand-offs the screens need: requestDraft after a cleared wave and
-// requestResults when the run ends. Nothing here draws or reads the DOM.
+// The fixed-step simulation: player, creatures, shots, pickups, wave director and run hand-offs.
 import { ARENA, FEEL, FIELD, PLAYER, STARSEED, STEP } from './config.js';
 import { createRng } from './rng.js';
 import { createCamera, updateCamera } from './camera.js';
@@ -81,6 +78,9 @@ function makeWarden() {
     dashCooldown: 0,
     dashX: 0,
     dashY: 0,
+    perfectArmed: false,
+    dashStartHp: PLAYER.maxHp,
+    dashCount: 0,
     bloom: 0,
     bloomLock: 0,
     aimAngle: -Math.PI / 2,
@@ -172,9 +172,15 @@ export function createWorld(options) {
     endTimer: 0,
     petalTimer: 0,
     bloomWasFull: false,
+    perfectDashes: 0,
+    pollenCollected: 0,
     biomeIndex: 0,
     hurtFlash: 0,
-    introHint: { timer: 10, alpha: 1, moved: false, fired: false },
+    introHint: {
+      stage: 0, stageTime: 0, alpha: 1,
+      moved: false, fired: false, dashed: false, collected: false,
+      dashBase: 0, pollenBase: 0,
+    },
   };
 
   world.hurtWarden = (amount, sx, sy, kind) => hurtWarden(world, amount, sx, sy, kind);
@@ -303,12 +309,41 @@ export function createWorld(options) {
 
   function updateIntroHint(dt, control) {
     const hint = world.introHint;
-    if (!hint || world.wave !== 1 || hint.alpha <= 0) return;
-    if (control && Math.hypot(control.moveX ?? 0, control.moveY ?? 0) > 0.15) hint.moved = true;
-    if (control && control.firing) hint.fired = true;
-    if (hint.moved && hint.fired) hint.timer = Math.min(hint.timer, 1.6);
-    hint.timer -= dt;
-    if (hint.timer <= 0 || world.runTime > 12) hint.alpha = Math.max(0, hint.alpha - dt * 1.4);
+    if (!hint) return;
+    if (world.wave !== 1) {
+      hint.alpha = 0;
+      return;
+    }
+    hint.stageTime += dt;
+    if (hint.stageTime >= 0.55) {
+      const moving = control ? Math.hypot(control.moveX ?? 0, control.moveY ?? 0) > 0.15 : false;
+      if (hint.stage === 0 && moving) {
+        hint.moved = true;
+        hint.stage = 1;
+        hint.stageTime = 0;
+      } else if (hint.stage === 1 && control?.firing) {
+        hint.fired = true;
+        hint.stage = 2;
+        hint.stageTime = 0;
+        hint.dashBase = world.warden.dashCount;
+      } else if (hint.stage === 2 && world.warden.dashCount > hint.dashBase) {
+        hint.dashed = true;
+        hint.stage = 3;
+        hint.stageTime = 0;
+        hint.pollenBase = world.pollenCollected;
+      } else if (hint.stage === 3 && world.pollenCollected > hint.pollenBase) {
+        hint.collected = true;
+        hint.stage = 4;
+        hint.stageTime = 0;
+      }
+    }
+    // Each prompt waits for its own action, but never gates the run. It lingers a beat
+    // after the last step and then fades; a stalled player still gets it out of the way.
+    if (hint.stage >= 4) {
+      if (hint.stageTime > 2.8) hint.alpha = Math.max(0, hint.alpha - dt * 1.3);
+    } else if (world.runTime > 36) {
+      hint.alpha = Math.max(0, hint.alpha - dt * 0.9);
+    }
   }
 
   function directSpawns(dt) {
@@ -338,10 +373,9 @@ export function createWorld(options) {
   world.step = (dt, control) => {
     world.time += dt;
     tickScore(world.score, dt);
-    updateCamera(world.camera, dt);
 
     if (world.outcome) {
-      updateParticles(world.particles, dt);
+      stepEffects(dt);
       if (world.endTimer > 0) {
         world.endTimer -= dt;
         if (world.endTimer <= 0) world.requestResults = world.outcome;
@@ -349,9 +383,15 @@ export function createWorld(options) {
       return;
     }
 
+    // A hit-stop requested during the previous step freezes this one. Camera decay runs
+    // exactly once per step (inside stepEffects) and the counter is spent only after the
+    // frozen step, so a fresh kick always gets its full duration instead of being drained
+    // by an extra camera update before the simulation sees it.
     if (world.camera.hitStop > 0) {
-      world.camera.hitStop = Math.max(0, world.camera.hitStop - dt);
       updateParticles(world.particles, dt);
+      updateCamera(world.camera, dt);
+      world.camera.hitStop = Math.max(0, world.camera.hitStop - dt);
+      if (world.camera.hitStop <= 1e-9) world.camera.hitStop = 0;
       return;
     }
 

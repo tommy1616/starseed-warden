@@ -1,6 +1,4 @@
-// Screen shake and hit-stop, kept apart from the rules. Shake is a decaying magnitude the
-// renderer turns into a small offset; hit-stop freezes the simulation for a few frames on a
-// big impact while the screen keeps painting. Both are deliberately restrained.
+// Screen shake, flash and hit-stop; world.step owns their clock, the renderer only reads them.
 export function createCamera() {
   return {
     shake: 0,

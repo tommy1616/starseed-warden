@@ -1,7 +1,4 @@
-// Collisions and consequences: darts against the Hollow, bullets and bodies against the
-// Warden and the Starseed, and the damage bookkeeping every hit goes through. Damage numbers,
-// hit flashes, particles, camera kicks and sounds are all triggered from here so one hit looks
-// and feels the same whoever caused it.
+// Collisions and damage bookkeeping; one place for hit feedback, kills, slows and area damage.
 import { FEEL, PLAYER } from './config.js';
 import { addArc, addNumber, addRing, burst } from './particles.js';
 import { awardKill, registerHit } from './scoring.js';
@@ -184,9 +181,19 @@ export function resolveDarts(world) {
         for (const other of world.enemies) chainFrom(other);
         if (world.boss) chainFrom(world.boss);
         if (arcTarget) {
-          damageEnemy(world, arcTarget, Math.round(dart.damage * (0.42 + 0.08 * dart.chain)), { silent: true });
-          addArc(world.particles, enemy.x, enemy.y, arcTarget.x, arcTarget.y, 'rgba(126,232,255,0.95)', 0.14);
-          burst(world.particles, world.rng, arcTarget.x, arcTarget.y, '#7ee8ff', 4, { speed: 90, life: 0.25, size: 2 });
+          const chainSlow = dart.frost > 0 ? Math.min(0.62, 0.28 + 0.1 * (dart.frost - 1)) : 0;
+          damageEnemy(world, arcTarget, Math.round(dart.damage * (0.42 + 0.08 * dart.chain)), {
+            silent: true,
+            slow: chainSlow,
+            slowTime: 1.2,
+          });
+          addArc(
+            world.particles,
+            enemy.x, enemy.y, arcTarget.x, arcTarget.y,
+            dart.frost > 0 ? 'rgba(174,238,255,0.95)' : 'rgba(126,232,255,0.95)',
+            0.14,
+          );
+          burst(world.particles, world.rng, arcTarget.x, arcTarget.y, dart.frost > 0 ? '#b6f4ff' : '#7ee8ff', 4, { speed: 90, life: 0.25, size: 2 });
         }
       }
       play(world, 'hit');

@@ -1,7 +1,4 @@
-// Every sound in Starseed Warden is synthesized here with WebAudio — no audio files.
-// The context is created only on the first user gesture; before that the game is silent
-// (browsers refuse to start audio otherwise). The game calls play(name) for one-shots and
-// hands setScene() to the generative music module.
+// Synthesized WebAudio SFX and generative music; the context starts on the first gesture.
 import { createMusic } from './music.js';
 
 export function createAudio() {

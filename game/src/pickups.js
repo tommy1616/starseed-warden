@@ -61,6 +61,7 @@ export function updatePickups(world, dt) {
     mote.phase += dt * 4;
     if (distance < warden.r + mote.r + 3) {
       world.warden.bloom = Math.min(PLAYER.bloomMax, world.warden.bloom + bloomPerMote(world));
+      world.pollenCollected += 1;
       world.score.score += mote.value * world.difficulty.score;
       world.score.pickupScore += mote.value;
       if (world.warden.bloom >= PLAYER.bloomMax && !world.bloomWasFull) {

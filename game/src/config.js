@@ -1,6 +1,4 @@
-// Tuning and the fixed geometry of Starseed Warden. The simulation always plays in a
-// 1280x720 logical field; the renderer scales that field to the window. Nothing below
-// depends on pixels of the real screen, so a run is identical at every window size.
+// Tuning and fixed 1280x720 geometry; nothing depends on real screen pixels.
 
 export const FIELD = { width: 1280, height: 720 };
 
@@ -40,6 +38,8 @@ export const PLAYER = {
   bloomRadius: 185,
   bloomDamage: 55,
   bloomCooldown: 0.5,
+  perfectDashRadius: 30,
+  perfectDashBloom: 12,
 };
 
 /** How close a pollen mote must be before it drifts into the Warden. */

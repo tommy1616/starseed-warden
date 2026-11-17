@@ -1,6 +1,4 @@
-// The in-play HUD: Warden health, the Starseed's shell, wave and biome, enemies remaining,
-// score and combo, the Bloom meter, dash cooldown, owned upgrade icons and the boss health bar.
-// It is deliberately a fixed overlay around the edges so the centre of the glade stays readable.
+// In-play HUD: health, Starseed, wave/score, Bloom/dash, upgrade icons, boss bar and staged prompts.
 import { BIOMES, FEEL, FIELD, PLAYER } from '../config.js';
 import { COLORS, RARITY } from '../palette.js';
 import { comboMultiplier } from '../scoring.js';
@@ -248,54 +246,89 @@ function drawBossBar(ctx, world) {
   bar(ctx, x + 20, y + 29, w - 40, 13, fraction, boss.type === 'crown' && boss.phase >= 3 ? '#ff5b4a' : '#ff5bd0', 'rgba(255,91,208,0.16)', 8);
 }
 
+const INTRO_STEPS = [
+  {
+    key: 'WASD',
+    title: 'MOVE',
+    detail: 'Arrow keys work too. Stay between the Hollow and the Starseed.',
+  },
+  {
+    key: 'HOLD LMB / J',
+    title: 'FIRE SEED-DARTS',
+    detail: 'Aim with the mouse; every dart flies toward the pointer.',
+  },
+  {
+    key: 'SPACE / SHIFT',
+    title: 'DASH',
+    detail: 'Perfect Dash: graze a thorn mid-dash to recycle it and gain 12 Bloom.',
+  },
+  {
+    key: 'POLLEN',
+    title: 'CHARGE BLOOM',
+    detail: 'Walk over golden pollen. Press E or right-click when the meter is full.',
+  },
+  {
+    key: 'READY',
+    title: 'THE GLADE IS YOURS',
+    detail: 'Move, shoot, dash and Bloom — every loop feeds the next.',
+  },
+];
+
 function drawIntroHint(ctx, world) {
   const hint = world.introHint;
   if (!hint || hint.alpha <= 0.01 || world.wave !== 1) return;
-  const chips = [
-    ['WASD', 'MOVE'],
-    ['MOUSE', 'AIM'],
-    ['LMB / J', 'FIRE'],
-    ['SPACE', 'DASH'],
-    ['E', 'BLOOM'],
-  ];
-  const width = 676;
-  const height = 44;
+  const step = INTRO_STEPS[Math.min(INTRO_STEPS.length - 1, hint.stage)];
+  const width = 680;
+  const height = 74;
   const x = (FIELD.width - width) / 2;
-  const y = 592;
+  const y = 566;
   ctx.save();
   ctx.globalAlpha = Math.min(1, hint.alpha);
-  panel(ctx, x, y, width, height, { fill: 'rgba(5,14,28,0.78)', edge: 'rgba(126,232,255,0.28)', radius: 14 });
-  let cursor = x + 18;
-  for (let i = 0; i < chips.length; i += 1) {
-    const [key, action] = chips[i];
-    ctx.font = '800 11px system-ui, sans-serif';
-    const keyWidth = Math.max(34, ctx.measureText(key).width + 16);
-    roundedRect(ctx, cursor, y + 12, keyWidth, 20, 6);
-    ctx.fillStyle = 'rgba(182,255,230,0.14)';
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(182,255,230,0.45)';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-    ctx.fillStyle = '#b6ffe6';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(key, cursor + keyWidth / 2, y + 23);
-    cursor += keyWidth + 7;
-    ctx.font = '700 11px system-ui, sans-serif';
-    ctx.fillStyle = 'rgba(234,255,248,0.78)';
-    ctx.textAlign = 'left';
-    ctx.fillText(action, cursor, y + 23);
-    cursor += ctx.measureText(action).width + 20;
-  }
-  ctx.font = '600 10px system-ui, sans-serif';
+  panel(ctx, x, y, width, height, { fill: 'rgba(5,14,28,0.82)', edge: 'rgba(126,232,255,0.28)', radius: 14 });
+
+  ctx.font = '800 9px system-ui, sans-serif';
   ctx.fillStyle = 'rgba(255,238,184,0.72)';
-  ctx.textAlign = 'right';
-  ctx.fillText('DEFEND THE STARSEED', x + width - 18, y + 23);
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(
+    `FIRST NIGHT  ·  STEP ${Math.min(4, hint.stage + 1)} / 4`,
+    x + 18,
+    y + 13,
+  );
+
+  const dotStart = x + width - 18 - 3 * 13;
+  for (let i = 0; i < 4; i += 1) {
+    ctx.fillStyle = i < hint.stage ? '#b6ffe6' : i === hint.stage ? '#ffd76a' : 'rgba(143,182,198,0.24)';
+    ctx.beginPath();
+    ctx.arc(dotStart + i * 13, y + 13, i === hint.stage ? 3 : 2.4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.font = '800 11px system-ui, sans-serif';
+  const keyWidth = Math.max(34, ctx.measureText(step.key).width + 16);
+  roundedRect(ctx, x + 18, y + 24, keyWidth, 22, 6);
+  ctx.fillStyle = 'rgba(182,255,230,0.14)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(182,255,230,0.45)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.fillStyle = '#b6ffe6';
+  ctx.textAlign = 'center';
+  ctx.fillText(step.key, x + 18 + keyWidth / 2, y + 36);
+
+  ctx.textAlign = 'left';
+  ctx.font = '800 12px system-ui, sans-serif';
+  ctx.fillStyle = '#eafff8';
+  ctx.fillText(step.title, x + 18 + keyWidth + 10, y + 36);
+
+  ctx.font = '600 12px system-ui, sans-serif';
+  ctx.fillStyle = 'rgba(214,238,246,0.82)';
+  ctx.fillText(step.detail, x + 18, y + 59);
   ctx.restore();
 }
 
 function drawControlsHint(ctx, world) {
-  const text = 'WASD move · mouse aim · hold fire · SPACE dash · E bloom · ESC pause';
+  const text = 'WASD move · aim mouse · fire · SPACE dash (graze = Bloom) · E bloom · ESC pause';
   ctx.font = '600 11px system-ui, -apple-system, "Segoe UI", sans-serif';
   ctx.fillStyle = 'rgba(143,182,198,0.55)';
   ctx.textAlign = 'right';

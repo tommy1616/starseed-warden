@@ -1,6 +1,4 @@
-// The Warden's body and kit: movement, the invulnerable dash, seed-dart volleys, Bloom, and
-// the passive effects upgrades add (orbiting petals, thorn aura, dash trail, lingering bloom).
-// All tunables come from config.js and the run's modifier counts, so upgrade stacks compose.
+// The Warden's movement, dash (including Perfect Dash), seed-dart volleys, Bloom and upgrade passives.
 import { ARENA, FEEL, PLAYER } from './config.js';
 import { addAfterimage, addNumber, addParticle, addRing, burst } from './particles.js';
 import { spawnDart } from './projectiles.js';
@@ -83,10 +81,59 @@ function startDash(world, control) {
   warden.invulnerable = Math.max(warden.invulnerable, PLAYER.dashInvulnerable);
   warden.dashCooldown = PLAYER.dashCooldown * Math.pow(0.82, mods.flit);
   warden.trailTimer = 0;
+  warden.perfectArmed = true;
+  warden.dashStartHp = warden.hp;
+  warden.dashCount += 1;
   addRing(world.particles, warden.x, warden.y, 8, 48, 'rgba(182,255,230,0.8)', 0.3, 3);
   burst(world.particles, world.rng, warden.x, warden.y, '#b6ffe6', 10, { speed: 150, life: 0.35, size: 2.6 });
   world.camera.shake = Math.max(world.camera.shake, 2.4);
   world.audio?.play('dash');
+}
+
+/**
+ * One reward per dash: if the dash itself brushes an enemy shot without the Warden losing
+ * health, recycle that shot and feed a little Bloom. This runs only on dash frames, never
+ * while standing, and it grants no score, cooldown reset or extra invulnerability.
+ */
+function checkPerfectDash(world) {
+  const warden = world.warden;
+  if (!warden.perfectArmed || warden.hp < warden.dashStartHp) return;
+  const bullets = world.bullets;
+  let index = -1;
+  let nearest = Infinity;
+  for (let i = 0; i < bullets.length; i += 1) {
+    const bullet = bullets[i];
+    const reach = PLAYER.perfectDashRadius + bullet.r;
+    const dx = bullet.x - warden.x;
+    const dy = bullet.y - warden.y;
+    const distance = dx * dx + dy * dy;
+    if (distance <= reach * reach && distance < nearest) {
+      nearest = distance;
+      index = i;
+    }
+  }
+  if (index < 0) return;
+  const bullet = bullets[index];
+  bullets.splice(index, 1);
+  warden.perfectArmed = false;
+  const before = warden.bloom;
+  warden.bloom = Math.min(PLAYER.bloomMax, warden.bloom + PLAYER.perfectDashBloom);
+  const gained = Math.round(warden.bloom - before);
+  world.perfectDashes += 1;
+  addNumber(
+    world.particles,
+    warden.x,
+    warden.y - 34,
+    gained > 0 ? `PERFECT DASH  +${gained} BLOOM` : 'PERFECT DASH',
+    '#ffe28a',
+    18,
+  );
+  addRing(world.particles, warden.x, warden.y, 8, 58, 'rgba(255,226,138,0.95)', 0.45, 4);
+  addRing(world.particles, bullet.x, bullet.y, bullet.r + 2, 34, 'rgba(182,255,230,0.8)', 0.32, 2);
+  burst(world.particles, world.rng, bullet.x, bullet.y, '#ffe28a', 12, { speed: 220, life: 0.55, size: 3 });
+  burst(world.particles, world.rng, warden.x, warden.y, '#b6ffe6', 8, { speed: 150, life: 0.4, size: 2.4 });
+  world.camera.shake = Math.max(world.camera.shake, 3.2);
+  world.audio?.play('pickup');
 }
 
 function releaseBloom(world) {
@@ -238,7 +285,6 @@ export function updatePlayer(world, dt, control) {
   if (control.dash && warden.dashCooldown <= 0 && warden.dashTimer <= 0) startDash(world, control);
 
   if (warden.dashTimer > 0) {
-    warden.dashTimer -= dtClamped;
     warden.x += warden.dashX * PLAYER.dashSpeed * dtClamped;
     warden.y += warden.dashY * PLAYER.dashSpeed * dtClamped;
     warden.trailTimer -= dtClamped;
@@ -251,6 +297,8 @@ export function updatePlayer(world, dt, control) {
         });
       }
     }
+    checkPerfectDash(world);
+    warden.dashTimer -= dtClamped;
   } else {
     const speed = PLAYER.speed * (1 + 0.08 * mods.swift);
     warden.x += (control.moveX ?? 0) * speed * dtClamped;
