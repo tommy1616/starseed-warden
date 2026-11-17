@@ -32,7 +32,7 @@ function drawStats(ctx, app, x, y, w, h) {
     ['ACCURACY', `${Math.round(results.accuracy * 100)}%`],
     ['TIME IN THE GLADE', formatTime(results.time)],
     ['UPGRADES TAKEN', String(results.upgradesTaken)],
-    ['BEST COMBO', `${results.comboBest}`],
+    ['BEST COMBO · OATHS KEPT', `${results.comboBest} · ${results.oathsCompleted ?? 0} kept (+${results.oathBonus ?? 0})`],
   ];
   const colWidth = w / 2;
   for (let i = 0; i < rows.length; i += 1) {

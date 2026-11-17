@@ -63,6 +63,17 @@ window.__game = {
   get tutorialStage() { return app.world ? app.world.introHint.stage : 0; },
   get perfectDashes() { return app.world ? app.world.perfectDashes : 0; },
   get pollenCollected() { return app.world ? app.world.pollenCollected : 0; },
+  get oath() {
+    const oath = app.world ? app.world.oath : null;
+    return oath ? { id: oath.id, status: oath.status, progress: oath.progress, wave: oath.wave } : null;
+  },
+  get draft() {
+    return app.draft ? { oathId: app.draft.oathId, focus: app.draft.focus, cards: app.draft.cards.length } : null;
+  },
+  get focusAction() { return app.focusAction; },
+  get oathsCompleted() { return app.world ? app.world.oathsCompleted : 0; },
+  get oathBonus() { return app.world ? app.world.oathBonus : 0; },
+  get seedDamageTaken() { return app.world ? app.world.seedDamageTaken : 0; },
   get warden() {
     return app.world
       ? { x: app.world.warden.x, y: app.world.warden.y, bloom: app.world.warden.bloom }

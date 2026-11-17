@@ -2,9 +2,9 @@
 import { STEP } from './config.js';
 import { createWorld } from './world.js';
 import { createBoss } from './bosses.js';
-import { openDraft, pickDraft, endRun, SCREEN } from './state.js';
+import { openDraft, pickDraft, endRun, dispatch, SCREEN } from './state.js';
 import { upgradeById, takeUpgrade } from './upgrades.js';
-import { bulletRing, spawnHazard } from './projectiles.js';
+import { bulletRing, spawnHazard, spawnBullet } from './projectiles.js';
 import { addRing, burst } from './particles.js';
 
 function nearestEnemy(world) {
@@ -308,6 +308,7 @@ function stageDraft(app) {
   app.world.bullets.length = 0;
   app.world.hazards.length = 0;
   openDraft(app, cardsFromIds(['spread', 'thorn', 'magnet']));
+  app.draft.oathId = 'graze';
   app.draft.time = 1.2;
   app.draft.focus = 0;
   app.screen = SCREEN.draft;
@@ -440,43 +441,61 @@ function stageBoss(app) {
   app.screenTime = 2;
 }
 
-function stageVictory(app) {
+function stageOath(app) {
   prepareWorld(app);
-  applyCards(app.world, ['spread', 'rapid', 'pierce', 'crit', 'homing', 'magnet', 'vitality', 'bloomPower']);
+  applyCards(app.world, ['spread', 'rapid', 'pierce', 'crit', 'homing', 'magnet', 'vitality']);
+  const picks = [['spread'], ['rapid'], ['pierce'], ['crit'], ['magnet']];
+  const reached = advanceToWave(app, 6, picks);
   const world = app.world;
-  world.wave = 12;
-  world.biomeIndex = 2;
+  if (!reached) {
+    world.wave = 6;
+    world.biomeIndex = 1;
+    world.phase = 'active';
+    world.spawnQueue = [];
+    world.enemies = [];
+    world.boss = null;
+    world.pendingBoss = null;
+    world.outcome = null;
+    world.requestResults = null;
+    world.lostReason = null;
+  }
+  world.starseed.hp = world.starseed.maxHp;
+  world.warden.hp = world.warden.maxHp;
+  // The oath is taken through the real draft dispatch, not a hand-written world.oath.
+  openDraft(app, cardsFromIds(['thorn']));
+  dispatch(app, 'oath:graze');
+  pickDraft(app, 0);
+  world.bannerTimer = 0;
   world.phase = 'active';
   world.spawnQueue = [];
   world.pendingBoss = null;
-  world.bannerTimer = 0;
-  world.runTime = 486;
-  world.score.score = 39480;
-  world.score.kills = 236;
-  world.score.shots = 940;
-  world.score.hits = 742;
-  world.score.comboBest = 34;
-  const boss = createBoss(world, 'crown');
-  boss.state = 'idle';
-  boss.attackTimer = 999;
-  boss.hp = boss.maxHp * 0.04;
-  boss.phase = 3;
-  boss.lastPhase = 3;
-  boss.x = 640;
-  boss.y = 220;
-  let steps = 0;
-  while (!world.requestResults && steps < 1200) {
-    world.step(STEP, { moveX: 0, moveY: 0, aimX: boss.x, aimY: boss.y, firing: true, dash: false, bloom: false });
-    steps += 1;
+  world.boss = null;
+  world.outcome = null;
+  world.requestResults = null;
+  world.warden.dashCooldown = 0;
+  world.warden.invulnerable = 0;
+  dressPlayScene(world);
+  // One genuine Perfect Dash in this wave: a thorn beside the Warden is grazed and recycled.
+  spawnBullet(world, world.warden.x + 25, world.warden.y, 0, 0);
+  const aim = { moveX: 1, moveY: 0, aimX: 900, aimY: 300, firing: true, dash: true, bloom: false };
+  world.step(STEP, aim);
+  for (let i = 0; i < 10; i += 1) {
+    world.step(STEP, { ...aim, dash: false, moveX: 0 });
   }
-  if (!world.requestResults) {
-    world.outcome = 'victory';
-    world.requestResults = 'victory';
-  }
-  endRun(app);
-  app.screen = SCREEN.results;
-  app.screenTime = 2.4;
-  app.focusAction = 'again';
+  world.warden.aimX = 900;
+  world.warden.aimY = 300;
+  world.warden.aimAngle = Math.atan2(300 - world.warden.y, 900 - world.warden.x);
+  world.warden.bloom = 100;
+  world.warden.hp = world.warden.maxHp;
+  world.starseed.hp = world.starseed.maxHp;
+  world.camera.flash = 0;
+  world.camera.hitStop = 0;
+  world.camera.shake = Math.max(world.camera.shake, 2.5);
+  world.score.combo = Math.max(world.score.combo, 12);
+  world.score.comboTimer = 2.3;
+  world.runTime = Math.max(world.runTime, 231);
+  app.screen = SCREEN.play;
+  app.screenTime = 2;
 }
 
 function stageDefeat(app) {
@@ -532,8 +551,8 @@ export function stageShot(name, app) {
     case 'boss':
       stageBoss(app);
       break;
-    case 'victory':
-      stageVictory(app);
+    case 'oath':
+      stageOath(app);
       break;
     case 'defeat':
       stageDefeat(app);

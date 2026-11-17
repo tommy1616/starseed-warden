@@ -6,6 +6,7 @@ import { drawEntities } from './entities.js';
 import { drawAirEffects, drawHazards } from './effects.js';
 import { drawUpgradeIcon } from './icons.js';
 import { draftSynergies } from '../upgrades.js';
+import { OATHS, oathById } from '../oaths.js';
 import { addButton, clearButtons, drawButtons, panel, roundedRect } from '../ui/buttons.js';
 
 function wrapText(ctx, text, maxWidth) {
@@ -194,7 +195,16 @@ export function drawDraft(ctx, app) {
   ctx.fillText(`CHOOSE ONE BLOOM FOR WAVE ${nextWave}  ·  BIOME ${biome}`, cx, 158);
   ctx.fillStyle = 'rgba(143,182,198,0.7)';
   ctx.font = '600 12px system-ui, sans-serif';
-  ctx.fillText(world && world.phase === 'clearing' ? 'THE GLADE IS QUIET FOR A MOMENT' : 'THE HOLLOW WAITS BEYOND THE LIGHT', cx, 182);
+  const lastOath = world?.oath;
+  let status = world && world.phase === 'clearing' ? 'THE GLADE IS QUIET FOR A MOMENT' : 'THE HOLLOW WAITS BEYOND THE LIGHT';
+  if (lastOath && lastOath.id !== 'none' && lastOath.status === 'fulfilled') {
+    status = `LAST OATH KEPT · ${oathById(lastOath.id).name.toUpperCase()}`;
+    ctx.fillStyle = 'rgba(182,255,230,0.92)';
+  } else if (lastOath && lastOath.status === 'missed') {
+    status = `LAST OATH MISSED · ${oathById(lastOath.id).name.toUpperCase()} · ordinary reward kept`;
+    ctx.fillStyle = 'rgba(255,154,60,0.9)';
+  }
+  ctx.fillText(status, cx, 182);
   ctx.restore();
 
   clearButtons(app.ui);
@@ -219,10 +229,20 @@ export function drawDraft(ctx, app) {
   ctx.textBaseline = 'middle';
   ctx.font = '600 13px system-ui, sans-serif';
   ctx.fillStyle = 'rgba(234,255,248,0.65)';
-  ctx.fillText('1 / 2 / 3  OR  ARROWS + ENTER', cx, 628);
+  ctx.fillText('OPTIONAL: CHOOSE A GARDEN OATH, THEN YOUR BLOOM', cx, 580);
   ctx.fillStyle = 'rgba(143,182,198,0.55)';
-  ctx.fillText('SYNERGY lines are real combinations with upgrades you already own.', cx, 652);
+  const selected = oathById(app.draft?.oathId);
+  ctx.fillText(`${selected.rule} / ${selected.reward}`, cx, 671);
+  ctx.fillText('1 / 2 / 3 chooses a bloom. Click any oath, or use arrows + Enter.', cx, 695);
   ctx.restore();
+
+  OATHS.forEach((oath, i) => addButton(app.ui, {
+    x: 70 + i * 288, y: 596, w: 276, h: 52,
+    style: 'difficulty', label: oath.name.toUpperCase(),
+    sub: oath.id === 'none' ? 'No bonus / no extra task' : oath.reward,
+    action: `oath:${oath.id}`, selected: app.draft?.oathId === oath.id,
+    focused: app.focusAction === `oath:${oath.id}`, color: oath.color,
+  }));
 
   drawButtons(ctx, app.ui, app.pointer ?? null, app.ui.time);
 }

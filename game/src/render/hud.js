@@ -4,6 +4,7 @@ import { COLORS, RARITY } from '../palette.js';
 import { comboMultiplier } from '../scoring.js';
 import { ownedCards } from '../upgrades.js';
 import { remainingEnemies } from '../world.js';
+import { oathById, oathProgress } from '../oaths.js';
 import { drawUpgradeIcon } from './icons.js';
 import { panel, roundedRect } from '../ui/buttons.js';
 
@@ -343,6 +344,34 @@ export function drawHud(ctx, world) {
   drawBloomAndDash(ctx, world);
   drawUpgradeRow(ctx, world);
   drawBossBar(ctx, world);
+  drawOathPanel(ctx, world);
   drawIntroHint(ctx, world);
   drawControlsHint(ctx, world);
+}
+
+function drawOathPanel(ctx, world) {
+  const oath = oathById(world.oath?.id);
+  const x = 936, y = 158, w = 322;
+  ctx.save();
+  panel(ctx, x, y, w, 91, { fill: 'rgba(5,14,28,0.9)', edge: `${oath.color}66`, radius: 13 });
+  label(ctx, `GARDEN OATH / ${world.oathsCompleted} KEPT`, x + 16, y + 17, 10, oath.color, 'left', 800);
+  label(ctx, oath.name.toUpperCase(), x + 16, y + 37, 15, '#eafff8', 'left', 800);
+  const detail = oathProgress(world);
+  ctx.font = '600 11px system-ui, sans-serif';
+  const words = detail.split(' ');
+  let line = '', row = 0;
+  for (const word of words) {
+    if (ctx.measureText(`${line} ${word}`).width > w - 32 && line) {
+      label(ctx, line, x + 16, y + 58 + row * 15, 11, oath.color, 'left', 600);
+      line = word; row += 1;
+    } else line = line ? `${line} ${word}` : word;
+  }
+  label(ctx, line, x + 16, y + 58 + row * 15, 11, oath.color, 'left', 600);
+  const notice = world.oathNotice;
+  if (notice) {
+    ctx.globalAlpha = Math.min(1, notice.timer * 1.8);
+    panel(ctx, x, y + 97, w, 30, { fill: 'rgba(5,14,28,0.9)', edge: notice.color, radius: 10 });
+    label(ctx, notice.text, x + w / 2, y + 113, 11.5, notice.color, 'center', 800);
+  }
+  ctx.restore();
 }

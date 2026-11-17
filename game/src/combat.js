@@ -45,6 +45,7 @@ export function hurtStarseed(world, amount) {
   }
   const damage = Math.max(1, Math.round(amount));
   seed.hp = Math.max(0, seed.hp - damage);
+  world.seedDamageTaken += damage;
   seed.hurtFlash = 0.35;
   addNumber(world.particles, seed.x, seed.y - 44, `-${damage}`, '#ffcf5a', 20);
   burst(world.particles, world.rng, seed.x, seed.y, '#ffcf5a', 10, { speed: 130, life: 0.6, size: 3 });

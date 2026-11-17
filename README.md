@@ -16,6 +16,8 @@ Then open http://localhost:8080.
 
 ## How to play
 
+- **Garden Oaths:** in each between-wave draft, optionally select an oath before choosing your Bloom. Quiet Garden skips the challenge. Unbroken Shell requires zero Starseed HP damage and rewards 18 seed HP +900 score; Dance with Thorns asks for two Perfect Dashes and rewards 25 Warden HP +600; Golden Harvest asks for eight pollen motes and rewards 40 Bloom +700. Defense pays the most, since a whole wave without a scratch is the hardest of the three. Each oath lasts one wave, pays once on clearing it, and never removes your ordinary wave reward on failure. Health and Bloom stay capped. The HUD tracks live progress and flashes when the shell breaks; the draft recalls the last oath; the results count kept oaths. Click an oath, or use arrows and Enter; 1/2/3 still choose a Bloom immediately.
+
 - **Move** with WASD or the arrow keys; **aim** with the mouse.
 - **Hold left mouse or J** to fire seed-darts; **Space or Shift** dashes with a moment of invulnerability.
 - **Perfect Dash:** brush an enemy shot during a dash without taking damage. The shot is recycled and you gain 12 Bloom. At most one reward per dash; it adds no score, cooldown reset or extra invulnerability.
@@ -36,6 +38,7 @@ Then open http://localhost:8080.
 - `game/src/player.js`, `starseed.js` — the Warden's kit (including Perfect Dash) and the Starseed's shell.
 - `game/src/enemies.js`, `bosses.js`, `projectiles.js`, `pickups.js` — the Hollow, its bosses, shots and pollen.
 - `game/src/waves.js` — wave director and biome table.
+- `game/src/oaths.js` — the four Garden Oaths: their rules, one-wave progress, capped payout and feedback.
 - `game/src/upgrades.js` — the 23-card Bloom Draft pool, stacking effects and real synergy hints.
 - `game/src/combat.js`, `scoring.js`, `particles.js`, `camera.js` — hits, score, debris, shake and hit-stop.
 - `game/src/audio.js`, `music.js` — synthesized SFX and the generative ambient score.
@@ -43,7 +46,7 @@ Then open http://localhost:8080.
 - `game/src/render/` — view, background, entities, effects, HUD, title, draft, pause, results and icons.
 - `game/src/ui/buttons.js` — canvas menu buttons, hover and keyboard focus.
 - `game/src/shots.js` — deterministic screenshot scenes and the simple autopilot.
-- `tools/shoot.mjs`, `tools/playtest.mjs`, `tools/browser.mjs` — headless Chrome screenshot and playtest tools.
+- `tools/shoot.mjs`, `tools/playtest.mjs`, `tools/oath-flow.mjs`, `tools/browser.mjs` — headless Chrome screenshot, playtest and real oath-flow tools.
 - `screenshots/` — the four published captures.
 
 ---

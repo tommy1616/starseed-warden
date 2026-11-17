@@ -57,7 +57,7 @@ function drawLogo(ctx, time) {
 
   ctx.font = '600 14px system-ui, -apple-system, "Segoe UI", sans-serif';
   ctx.fillStyle = 'rgba(182,255,230,0.78)';
-  ctx.fillText('DEFEND THE STARSEED FROM THE HOLLOW', cx, 315);
+  ctx.fillText('DEFEND THE STARSEED / DRAFT YOUR BUILD / KEEP YOUR OATH', cx, 315);
   ctx.restore();
 }
 

@@ -12,6 +12,7 @@ import { updateDarts, updateBullets, updateHazards, offscreenCull } from './proj
 import { resolveDarts, resolveBullets, resolveBodies, damageEnemy, damageInRadius, hurtWarden, hurtStarseed } from './combat.js';
 import { dropPollen, updatePickups } from './pickups.js';
 import { buildWave, TOTAL_WAVES, biomeIndexForWave, waveTitle, BOSS_NAMES } from './waves.js';
+import { beginOath, updateOath, settleOath } from './oaths.js';
 
 function createDecor(rng) {
   const fireflies = [];
@@ -174,6 +175,11 @@ export function createWorld(options) {
     bloomWasFull: false,
     perfectDashes: 0,
     pollenCollected: 0,
+    seedDamageTaken: 0,
+    oathsCompleted: 0,
+    oathBonus: 0,
+    oath: null,
+    oathNotice: null,
     biomeIndex: 0,
     hurtFlash: 0,
     introHint: {
@@ -238,6 +244,7 @@ export function createWorld(options) {
     world.clearTimer = FEEL.waveClearPause;
     const fraction = Math.max(0, world.starseed.hp / world.starseed.maxHp);
     world.clearBonus = awardWaveClear(world.score, world.wave, fraction, world.difficulty);
+    settleOath(world);
     world.spawnQueue = [];
     world.bullets.length = 0;
     world.hazards.length = 0;
@@ -286,6 +293,7 @@ export function createWorld(options) {
     world.bullets.length = 0;
     world.hazards.length = 0;
     if (world.wave >= TOTAL_WAVES) {
+      settleOath(world);
       world.phase = 'clearing';
       world.clearTimer = FEEL.waveClearPause + 0.35;
       world.clearBonus = points;
@@ -294,17 +302,19 @@ export function createWorld(options) {
     }
   };
 
-  world.nextWave = () => {
+  world.nextWave = (oathId = 'none') => {
     world.requestDraft = false;
     world.warden.hp = Math.min(world.warden.maxHp, world.warden.hp + 8);
     world.starseed.hp = Math.min(world.starseed.maxHp, world.starseed.hp + 6);
     startWave(world.wave + 1);
+    beginOath(world, oathId);
   };
 
   world.startRun = () => {
     world.wave = 1;
     world.runTime = 0;
     startWave(1);
+    beginOath(world, 'none');
   };
 
   function updateIntroHint(dt, control) {
@@ -373,6 +383,10 @@ export function createWorld(options) {
   world.step = (dt, control) => {
     world.time += dt;
     tickScore(world.score, dt);
+    if (world.oathNotice) {
+      world.oathNotice.timer -= dt;
+      if (world.oathNotice.timer <= 0) world.oathNotice = null;
+    }
 
     if (world.outcome) {
       stepEffects(dt);
@@ -449,6 +463,7 @@ export function createWorld(options) {
     resolveBodies(world);
     updatePickups(world, dt);
     offscreenCull(world.bullets);
+    updateOath(world);
     stepEffects(dt);
     checkWaveState();
   };

@@ -7,6 +7,7 @@ import { drawDraft, takeUpgrade, ownedCards } from './upgrades.js';
 import { readBest, writeBest } from './storage.js';
 import { accuracy } from './scoring.js';
 import { ACTION } from './input.js';
+import { OATHS, oathById } from './oaths.js';
 
 export const SCREEN = {
   title: 'title',
@@ -98,11 +99,12 @@ export function openDraft(app, cards = null) {
     focus: 0,
     time: 0,
     chosen: -1,
+    oathId: 'none',
   };
   app.screen = SCREEN.draft;
   app.screenTime = 0;
   app.focusAction = 'card:0';
-  app.announce('Bloom Draft: choose one of three upgrades. Press 1, 2 or 3.');
+  app.announce('Bloom Draft: optional garden oath first, then choose a bloom with 1, 2 or 3. Arrows reach all choices.');
 }
 
 export function pickDraft(app, index) {
@@ -114,7 +116,7 @@ export function pickDraft(app, index) {
   takeUpgrade(app.world, card);
   app.audio?.play('card');
   app.announce(`${card.name} taken.`);
-  app.world.nextWave();
+  app.world.nextWave(app.draft.oathId);
   app.screen = SCREEN.play;
   app.screenTime = 0;
   app.focusAction = 'play';
@@ -181,6 +183,8 @@ export function endRun(app) {
     newBest,
     difficulty: app.difficulty.name,
     lostReason: world.lostReason,
+    oathsCompleted: world.oathsCompleted,
+    oathBonus: world.oathBonus,
   };
   app.screen = SCREEN.results;
   app.screenTime = 0;
@@ -215,8 +219,10 @@ const FOCUS = {
 
 export function cycleFocus(app, delta) {
   if (app.screen === SCREEN.draft && app.draft) {
-    app.draft.focus = (app.draft.focus + delta + app.draft.cards.length) % app.draft.cards.length;
-    app.focusAction = `card:${app.draft.focus}`;
+    const choices = [...app.draft.cards.map((_, i) => `card:${i}`), ...OATHS.map(o => `oath:${o.id}`)];
+    const current = Math.max(0, choices.indexOf(app.focusAction));
+    app.focusAction = choices[(current + delta + choices.length) % choices.length];
+    app.draft.focus = app.focusAction.startsWith('card:') ? Number(app.focusAction.slice(5)) : -1;
     app.audio?.play('select');
     return;
   }
@@ -250,6 +256,11 @@ export function dispatch(app, action) {
     app.focusAction = action;
   } else if (action.startsWith('card:')) {
     pickDraft(app, Number(action.slice(5)));
+  } else if (action.startsWith('oath:') && app.screen === SCREEN.draft && app.draft) {
+    app.draft.oathId = oathById(action.slice(5)).id;
+    app.focusAction = 'card:0';
+    app.draft.focus = 0;
+    app.announce(`${oathById(app.draft.oathId).name} selected. Choose a Bloom with 1, 2 or 3, or Enter.`);
   }
 }
 
@@ -288,13 +299,7 @@ export function handleActions(app, actions) {
     handled = true;
   }
   if (actions & ACTION.confirm) {
-    if (app.screen === SCREEN.results) {
-      startRun(app);
-    } else if (app.screen === SCREEN.draft && app.draft) {
-      pickDraft(app, app.draft.focus);
-    } else {
-      dispatch(app, app.focusAction);
-    }
+    dispatch(app, app.focusAction);
     handled = true;
   }
   if (app.screen === SCREEN.draft && app.draft) {
