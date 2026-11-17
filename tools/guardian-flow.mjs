@@ -26,6 +26,14 @@ async function press(cdp, k, code, vk) {
   await delay(80);
 }
 
+async function hold(cdp, k, code, vk) {
+  await cdp.send('Input.dispatchKeyEvent', key('rawKeyDown', k, code, vk));
+}
+
+async function release(cdp, k, code, vk) {
+  await cdp.send('Input.dispatchKeyEvent', key('keyUp', k, code, vk));
+}
+
 async function mouse(cdp, type, x, y, buttons = 0) {
   await cdp.send('Input.dispatchMouseEvent', {
     type, x: Math.round(x), y: Math.round(y),
@@ -171,24 +179,75 @@ async function main() {
       restarted.guardian === 'petal' && restarted.levels.orbit === 2
       && Object.values(restarted.levels).reduce((a, b) => a + b, 0) === 2 && restarted.maxHp === 85, JSON.stringify(restarted));
 
-    // Injected boss: real update loop with a guardian, explicitly not a full clear.
+    // Published-page boss run: the page starts from an injected wave-12 Crown (and the debug
+    // hook's 500 HP for a rendering/input probe); every later phase comes from normal input and
+    // the page's own fixed-step loop. This is not the full fixed-step evidence, which lives in
+    // paths-boss-sim.mjs. We drive it long enough to see a phase and, if it happens, the results.
+    await title(cdp, url);
+    await chooseMouse(cdp, 'seedshot');
+    await press(cdp, '1', 'Digit1', 49);
+    await waitFor(cdp, 'window.__game.difficulty === "sprout"', 5000, 'sprout');
+    await start(cdp);
     await evaluate(cdp, 'window.__debug.boss()');
     await waitFor(cdp, 'window.__game.boss !== null', 5000, 'injected boss');
     const bossStart = await evaluate(cdp, 'window.__game.boss');
-    console.log(`INFO  injected boss ${bossStart.name}, hp ${bossStart.hp}/${bossStart.maxHp}; this is not a full run`);
+    console.log(`INFO  page boss probe starts at wave 12 with injected full Crown, guardian seedshot (debug hook keeps 500 Warden HP); full fight evidence is paths-boss-sim.mjs`);
     await mouse(cdp, 'mousePressed', 640, 300, 1);
+    await hold(cdp, 'a', 'KeyA', 65);
+    let moveKey = 'a';
+    let lastDash = 0;
+    let lastBloom = 0;
+    let lastSwap = 0;
+    let lastPhase = bossStart.phase;
+    let phase3 = false;
     const bossStarted = Date.now();
-    while (Date.now() - bossStarted < 6000) {
-      const target = await evaluate(cdp, 'window.__game.boss');
-      if (!target) break;
-      await mouse(cdp, 'mouseMoved', target.x, target.y, 1);
+    let endState = 'play';
+    while (Date.now() - bossStarted < 180000) {
+      const snap = await evaluate(cdp, '({state: window.__game.state, enemy: window.__game.nearestEnemy, boss: window.__game.boss, hp: window.__game.hp})');
+      if (snap.state === 'results') { endState = 'results'; break; }
+      const now = Date.now();
+      if (snap.enemy) await mouse(cdp, 'mouseMoved', snap.enemy.x, snap.enemy.y, 1);
+      if (snap.boss && snap.boss.phase !== lastPhase) {
+        lastPhase = snap.boss.phase;
+        console.log(`INFO  page boss phase ${lastPhase} at ${((now - bossStarted) / 1000).toFixed(1)}s real`);
+      }
+      if (snap.boss && snap.boss.phase >= 3 && !phase3) {
+        phase3 = true;
+        await capture(cdp, 'paths-boss-phase3.png');
+      }
+      if (now - lastSwap > 1600) {
+        await release(cdp, moveKey, `Key${moveKey.toUpperCase()}`, moveKey.toUpperCase().charCodeAt(0));
+        moveKey = moveKey === 'a' ? 'd' : 'a';
+        await hold(cdp, moveKey, `Key${moveKey.toUpperCase()}`, moveKey.toUpperCase().charCodeAt(0));
+        lastSwap = now;
+      }
+      if (now - lastDash > 2400) { await press(cdp, ' ', 'Space', 32); lastDash = now; }
+      if (now - lastBloom > 3200) { await press(cdp, 'e', 'KeyE', 69); lastBloom = now; }
       await delay(70);
     }
+    await release(cdp, moveKey, `Key${moveKey.toUpperCase()}`, moveKey.toUpperCase().charCodeAt(0));
     await mouse(cdp, 'mouseReleased', 640, 300, 0);
-    const bossNow = await evaluate(cdp, 'window.__game.boss');
-    check('injected boss takes real damage in the published build',
-      bossNow === null || bossNow.hp < bossStart.hp, JSON.stringify(bossNow));
-    await capture(cdp, 'paths-boss-injected.png');
+    let pageBoss = await evaluate(cdp, '({state: window.__game.state, outcome: window.__game.outcome, boss: window.__game.boss, phase3: window.__game.boss ? window.__game.boss.phase >= 3 : null})');
+    if (pageBoss.state === 'play' && pageBoss.outcome) {
+      await waitFor(cdp, 'window.__game.state === "results"', 15000, 'boss terminal results');
+      pageBoss = await evaluate(cdp, '({state: window.__game.state, outcome: window.__game.outcome, boss: window.__game.boss, phase3: window.__game.boss ? window.__game.boss.phase >= 3 : null})');
+    }
+    check('published page renders the boss and takes real input damage',
+      pageBoss.boss === null || pageBoss.boss.hp < bossStart.hp || pageBoss.state === 'results', JSON.stringify(pageBoss));
+    check('published page reaches phase 2 and a terminal result or phase 3',
+      lastPhase >= 2 && (pageBoss.state === 'results' || pageBoss.phase3 === true || phase3), JSON.stringify(pageBoss));
+    if (pageBoss.state === 'results') {
+      await capture(cdp, 'paths-boss-results.png');
+      check('published page boss terminal has an outcome', pageBoss.outcome === 'victory' || pageBoss.outcome === 'defeat', String(pageBoss.outcome));
+      await press(cdp, 'Enter', 'Enter', 13);
+      await waitFor(cdp, 'window.__game.state === "play" && window.__game.wave === 1', 8000, 'boss restart');
+      const bossRestart = await evaluate(cdp, '({wave: window.__game.wave, guardian: window.__game.guardian, levels: window.__game.upgradeLevels, maxHp: window.__game.wardenMaxHp, boss: window.__game.boss})');
+      check('published page restarts after the boss terminal without residue',
+        bossRestart.wave === 1 && bossRestart.guardian === 'seedshot'
+        && Object.keys(bossRestart.levels).length === 0 && bossRestart.maxHp === 100 && bossRestart.boss === null, JSON.stringify(bossRestart));
+    } else {
+      console.log(`INFO  page boss probe stopped at ${endState} with phase ${lastPhase}; phase3/terminal is covered by paths-boss-sim.mjs`);
+    }
 
     if (errors.length > 0) {
       console.error('\npage errors:');
