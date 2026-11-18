@@ -37,7 +37,7 @@ export const EVOLUTIONS = {
   bloom: [
     {
       id: 'sporeward', name: 'Spore Ward', kicker: 'CONTROL', color: '#7ec8ff', icon: 'shield',
-      desc: 'Bloom chills everything it touches for 2.4s, holding a whole wave still.',
+      desc: 'Bloom slows every Hollow caught in its blast to 45% speed for 2.4s. The Crown itself is not slowed.',
       cost: 'Bloom hits 15% softer and reaches 10% less far.',
       effect: { bloomSlow: 2.4, bloomSlowFactor: 0.45, bloomDamage: 0.85, bloomRadius: 0.9 },
     },
