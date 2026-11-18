@@ -239,7 +239,13 @@ async function main() {
     if (pageBoss.state === 'results') {
       await capture(cdp, 'paths-boss-results.png');
       check('published page boss terminal has an outcome', pageBoss.outcome === 'victory' || pageBoss.outcome === 'defeat', String(pageBoss.outcome));
-      await press(cdp, 'Enter', 'Enter', 13);
+      // One retry: a key that lands mid-transition can be missed after a long fight.
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        await press(cdp, 'Enter', 'Enter', 13);
+        await delay(600);
+        const state = await evaluate(cdp, '({state: window.__game.state, wave: window.__game.wave})');
+        if (state.state === 'play' && state.wave === 1) break;
+      }
       await waitFor(cdp, 'window.__game.state === "play" && window.__game.wave === 1', 8000, 'boss restart');
       const bossRestart = await evaluate(cdp, '({wave: window.__game.wave, guardian: window.__game.guardian, levels: window.__game.upgradeLevels, maxHp: window.__game.wardenMaxHp, boss: window.__game.boss})');
       check('published page restarts after the boss terminal without residue',
