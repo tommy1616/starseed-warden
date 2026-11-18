@@ -158,6 +158,14 @@ export function resolveDarts(world) {
       if (!dart.hasHit) {
         dart.hasHit = true;
         registerHit(world.score);
+        const bloomBase = world.guardian?.id === 'bloom' ? 0.9 : 0.35;
+        const bloomGain = bloomBase * (1 + 0.25 * world.mods.bloomCharge);
+        const prevBloom = world.warden.bloom;
+        world.warden.bloom = Math.min(PLAYER.bloomMax, prevBloom + bloomGain);
+        if (world.warden.bloom >= PLAYER.bloomMax && prevBloom < PLAYER.bloomMax && !world.bloomWasFull) {
+          world.bloomWasFull = true;
+          addNumber(world.particles, world.warden.x, world.warden.y - 34, 'BLOOM READY', '#ffd76a', 17);
+        }
       }
       const crit = dart.critChance > 0 && world.rng.chance(dart.critChance);
       const damage = Math.round(dart.damage * (crit ? 2 : 1));

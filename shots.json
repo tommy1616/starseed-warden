@@ -1,6 +1,6 @@
 [
-  { "name": "1-evolution-petal.jpg", "query": "?shot=evolve&guardian=petal&seed=5" },
-  { "name": "2-evolution-bloom.jpg", "query": "?shot=evolve&guardian=bloom&seed=7" },
-  { "name": "3-twin-nock.jpg", "query": "?shot=evolved&guardian=seedshot&evo=twinnock&seed=11" },
-  { "name": "4-guard-ring.jpg", "query": "?shot=evolved&guardian=petal&evo=guardring&seed=17" }
+  { "name": "1-boss.jpg", "query": "?shot=boss&seed=7" },
+  { "name": "2-title.jpg", "query": "?shot=title&seed=5" },
+  { "name": "3-evolution-petal.jpg", "query": "?shot=evolve&guardian=petal&seed=5" },
+  { "name": "4-victory.jpg", "query": "?shot=victory&guardian=seedshot&evo=twinnock&seed=11" }
 ]

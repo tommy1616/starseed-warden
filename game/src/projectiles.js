@@ -23,6 +23,7 @@ export function spawnDart(world, x, y, angle, options = {}) {
     chain: options.chain ?? warden.chain,
     ricochets: options.ricochets ?? warden.ricochet,
     critChance: options.critChance ?? warden.critChance,
+    heavy: options.heavy ?? 0,
     angle,
     hitIds: new Set(),
     trail: 0,
@@ -74,12 +75,23 @@ export function spawnHazard(world, hazard) {
   });
 }
 
-function nearestTarget(world, x, y, boss) {
-  const warden = world.warden;
-  const seed = world.starseed;
-  const dw = (warden.x - x) ** 2 + (warden.y - y) ** 2;
-  const ds = (seed.x - x) ** 2 + (seed.y - y) ** 2;
-  return dw <= ds ? { x: warden.x, y: warden.y } : { x: seed.x, y: seed.y };
+function nearestEnemyTarget(world, dart) {
+  let best = null;
+  let bestDistSq = 460 * 460;
+  const consider = (candidate) => {
+    if (!candidate || candidate.dead || candidate.burrowed) return;
+    if (dart.hitIds && dart.hitIds.has(candidate.id)) return;
+    const dx = candidate.x - dart.x;
+    const dy = candidate.y - dart.y;
+    const distSq = dx * dx + dy * dy;
+    if (distSq < bestDistSq) {
+      bestDistSq = distSq;
+      best = candidate;
+    }
+  };
+  for (const enemy of world.enemies) consider(enemy);
+  if (world.boss) consider(world.boss);
+  return best ? { x: best.x, y: best.y } : null;
 }
 
 export function updateDarts(world, dt) {
@@ -90,15 +102,17 @@ export function updateDarts(world, dt) {
     dart.life -= dt;
     if (dart.life <= 0) continue;
     if (dart.homing > 0) {
-      const target = nearestTarget(world, dart.x, dart.y);
-      const wanted = Math.atan2(target.y - dart.y, target.x - dart.x);
-      let diff = wanted - dart.angle;
-      while (diff > Math.PI) diff -= TAU;
-      while (diff < -Math.PI) diff += TAU;
-      dart.angle += Math.max(-3.4 * dt, Math.min(3.4 * dt, diff)) * (0.7 + dart.homing * 0.45);
-      const speed = Math.hypot(dart.vx, dart.vy);
-      dart.vx = Math.cos(dart.angle) * speed;
-      dart.vy = Math.sin(dart.angle) * speed;
+      const target = nearestEnemyTarget(world, dart);
+      if (target) {
+        const wanted = Math.atan2(target.y - dart.y, target.x - dart.x);
+        let diff = wanted - dart.angle;
+        while (diff > Math.PI) diff -= TAU;
+        while (diff < -Math.PI) diff += TAU;
+        dart.angle += Math.max(-3.6 * dt, Math.min(3.6 * dt, diff)) * (0.75 + dart.homing * 0.45);
+        const speed = Math.hypot(dart.vx, dart.vy);
+        dart.vx = Math.cos(dart.angle) * speed;
+        dart.vy = Math.sin(dart.angle) * speed;
+      }
     }
     dart.x += dart.vx * dt;
     dart.y += dart.vy * dt;

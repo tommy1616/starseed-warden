@@ -31,7 +31,7 @@ function fireVolley(world, control) {
   const evolution = world.evolution;
   const aim = aimVector(control, warden);
   const count = 1 + mods.multishot + (evolution?.extraDarts ?? 0);
-  const spread = count === 1 ? 0 : 0.09 + (count - 1) * 0.035;
+  const spread = count === 1 ? 0 : count === 2 ? 0.068 : 0.09 + (count - 1) * 0.035;
   const damage = PLAYER.dartDamage * (1 + 0.28 * mods.heavy) * (world.guardian?.dart ?? 1) * (evolution?.dartDamage ?? 1);
   const radius = PLAYER.dartRadius * (1 + 0.1 * mods.heavy);
   const speed = PLAYER.dartSpeed * (evolution?.dartSpeed ?? 1);
@@ -49,6 +49,7 @@ function fireVolley(world, control) {
       chain: mods.chain,
       ricochets: mods.ricochet,
       critChance: mods.crit * 0.12,
+      heavy: mods.heavy,
     });
     for (let spark = 0; spark < 2; spark += 1) {
       addParticle(
@@ -146,6 +147,7 @@ function releaseBloom(world) {
   const radius = PLAYER.bloomRadius * (1 + 0.15 * mods.bloomPower) * (evolution?.bloomRadius ?? 1);
   const damage = PLAYER.bloomDamage * (1 + 0.35 * mods.bloomPower) * (evolution?.bloomDamage ?? 1);
   warden.bloom = 0;
+  world.bloomWasFull = false;
   warden.bloomLock = PLAYER.bloomCooldown;
   world.damageInRadius(warden.x, warden.y, radius, damage, { crit: false });
   for (const enemy of world.enemies) {
@@ -177,13 +179,26 @@ function releaseBloom(world) {
   if (destroyed > 0) {
     addNumber(world.particles, warden.x, warden.y - 40, `BLOOM ×${destroyed}`, '#b6ffe6', 18);
   }
-  addRing(world.particles, warden.x, warden.y, 14, radius, 'rgba(182,255,230,0.95)', 0.65, 8);
-  addRing(world.particles, warden.x, warden.y, 8, radius * 0.7, 'rgba(255,215,106,0.7)', 0.5, 5);
-  burst(world.particles, world.rng, warden.x, warden.y, '#b6ffe6', 40, { speed: 330, life: 0.9, size: 3.4 });
-  burst(world.particles, world.rng, warden.x, warden.y, '#ffd76a', 18, { speed: 220, life: 1.0, size: 3 });
+  const evoId = evolution?.id;
+  if (evoId === 'sporeward') {
+    addRing(world.particles, warden.x, warden.y, 14, radius, 'rgba(126,200,255,0.95)', 0.7, 8);
+    addRing(world.particles, warden.x, warden.y, 10, radius * 0.78, 'rgba(174,238,255,0.65)', 0.6, 5);
+    burst(world.particles, world.rng, warden.x, warden.y, '#7ec8ff', 42, { speed: 320, life: 0.95, size: 3.4 });
+    burst(world.particles, world.rng, warden.x, warden.y, '#b6f4ff', 20, { speed: 210, life: 1.0, size: 3 });
+  } else if (evoId === 'burstcrown') {
+    addRing(world.particles, warden.x, warden.y, 14, radius, 'rgba(255,215,106,0.98)', 0.6, 9);
+    addRing(world.particles, warden.x, warden.y, 8, radius * 0.68, 'rgba(255,155,110,0.8)', 0.45, 6);
+    burst(world.particles, world.rng, warden.x, warden.y, '#ffd76a', 46, { speed: 360, life: 0.9, size: 3.8 });
+    burst(world.particles, world.rng, warden.x, warden.y, '#ffb67a', 20, { speed: 240, life: 0.9, size: 3.2 });
+  } else {
+    addRing(world.particles, warden.x, warden.y, 14, radius, 'rgba(182,255,230,0.95)', 0.65, 8);
+    addRing(world.particles, warden.x, warden.y, 8, radius * 0.7, 'rgba(255,215,106,0.7)', 0.5, 5);
+    burst(world.particles, world.rng, warden.x, warden.y, '#b6ffe6', 40, { speed: 330, life: 0.9, size: 3.4 });
+    burst(world.particles, world.rng, warden.x, warden.y, '#ffd76a', 18, { speed: 220, life: 1.0, size: 3 });
+  }
   world.camera.shake = Math.max(world.camera.shake, FEEL.shakeBloom);
   world.camera.flash = Math.max(world.camera.flash, 0.7);
-  world.camera.flashColor = 'rgba(182,255,230,1)';
+  world.camera.flashColor = evoId === 'sporeward' ? 'rgba(126,200,255,1)' : evoId === 'burstcrown' ? 'rgba(255,215,106,1)' : 'rgba(182,255,230,1)';
   world.camera.hitStop = Math.max(world.camera.hitStop, 0.07);
   world.audio?.play('bloom');
   if (mods.linger > 0) {
@@ -197,33 +212,32 @@ function updatePassives(world, dt) {
 
   if (mods.orbit > 0) {
     warden.orbitAngle = (warden.orbitAngle + dt * 2.3) % TAU;
-    world.petalTimer -= dt;
-    if (world.petalTimer <= 0) {
-      world.petalTimer = 0.22;
-      const radius = world.evolution?.orbitRadius ?? 56;
-      const cut = world.evolution?.orbitDamage ?? 1;
-      for (let p = 0; p < mods.orbit; p += 1) {
-        const angle = warden.orbitAngle + (p / mods.orbit) * TAU;
-        const px = warden.x + Math.cos(angle) * radius;
-        const py = warden.y + Math.sin(angle) * radius;
-        for (const enemy of world.enemies) {
-          if (enemy.dead || enemy.burrowed || enemy.orbitCooldown > 0) continue;
-          if (Math.hypot(enemy.x - px, enemy.y - py) < enemy.r + 11) {
-            enemy.orbitCooldown = 0.3;
-            world.damageEnemy(enemy, 7 * mods.orbit * cut * (1 + world.wave * 0.03), {});
-            addParticle(world.particles, px, py, 0, -20, 0.25, 3, '#8ff7c8', { drag: 3 });
-          }
+    const radius = world.evolution?.orbitRadius ?? 56;
+    const cut = world.evolution?.orbitDamage ?? 1;
+    const baseHit = 7 * mods.orbit * cut * (1 + world.wave * 0.03);
+    for (const enemy of world.enemies) enemy.orbitCooldown = Math.max(0, (enemy.orbitCooldown ?? 0) - dt);
+    if (world.boss) world.boss.orbitCooldown = Math.max(0, (world.boss.orbitCooldown ?? 0) - dt);
+
+    for (let p = 0; p < mods.orbit; p += 1) {
+      const angle = warden.orbitAngle + (p / mods.orbit) * TAU;
+      const px = warden.x + Math.cos(angle) * radius;
+      const py = warden.y + Math.sin(angle) * radius;
+      for (const enemy of world.enemies) {
+        if (enemy.dead || enemy.burrowed || enemy.orbitCooldown > 0) continue;
+        if (Math.hypot(enemy.x - px, enemy.y - py) < enemy.r + 11) {
+          enemy.orbitCooldown = 0.26;
+          world.damageEnemy(enemy, baseHit, {});
+          addParticle(world.particles, px, py, 0, -20, 0.25, 3, '#8ff7c8', { drag: 3 });
         }
-        if (world.boss && !world.boss.dead && Math.hypot(world.boss.x - px, world.boss.y - py) < world.boss.r + 11) {
-          if ((world.boss.orbitCooldown ?? 0) <= 0) {
-            world.boss.orbitCooldown = 0.3;
-            world.damageEnemy(world.boss, 7 * mods.orbit * cut, { silent: true });
-          }
+      }
+      if (world.boss && !world.boss.dead && (world.boss.orbitCooldown ?? 0) <= 0) {
+        if (Math.hypot(world.boss.x - px, world.boss.y - py) < world.boss.r + 11) {
+          world.boss.orbitCooldown = 0.26;
+          world.damageEnemy(world.boss, baseHit, {});
+          addParticle(world.particles, px, py, 0, -24, 0.28, 3.6, '#8ff7c8', { drag: 3 });
         }
       }
     }
-    for (const enemy of world.enemies) enemy.orbitCooldown = Math.max(0, (enemy.orbitCooldown ?? 0) - dt);
-    if (world.boss) world.boss.orbitCooldown = Math.max(0, (world.boss.orbitCooldown ?? 0) - dt);
   }
 
   if (mods.thorn > 0) {

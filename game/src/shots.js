@@ -572,7 +572,8 @@ function stageEvolved(app) {
   app.screenTime = 2;
 }
 
-function stageDefeat(app) {  prepareWorld(app);
+function stageDefeat(app) {
+  prepareWorld(app);
   applyCards(app.world, ['spread', 'rapid', 'frost', 'vitality', 'magnet']);
   const world = app.world;
   world.wave = 6;
@@ -596,6 +597,44 @@ function stageDefeat(app) {  prepareWorld(app);
     steps += 1;
   }
   if (!world.requestResults) world.requestResults = 'defeat';
+  endRun(app);
+  app.screen = SCREEN.results;
+  app.screenTime = 2.4;
+  app.focusAction = 'again';
+}
+
+function stageVictory(app) {
+  prepareWorld(app);
+  const world = app.world;
+  const choice = evolutionById(app.shotEvolution ?? '') ?? evolutionsFor(app.guardianId)[1] ?? evolutionsFor(app.guardianId)[0];
+  applyCards(world, ['spread', 'rapid', 'pierce', 'homing', 'frost', 'crit', 'vitality', 'magnet']);
+  if (choice) applyEvolution(world, choice);
+  world.wave = 12;
+  world.biomeIndex = 2;
+  world.phase = 'active';
+  world.bannerTimer = 0;
+  world.spawnQueue = [];
+  world.enemies.length = 0;
+  world.pendingBoss = null;
+  world.runTime = 398;
+  world.oathsCompleted = 4;
+  world.oathBonus = 2800;
+  world.score.score = 62480;
+  world.score.kills = 342;
+  world.score.eliteKills = 38;
+  world.score.bossKills = 3;
+  world.score.shots = 1280;
+  world.score.hits = 1054;
+  world.score.comboBest = 42;
+  world.starseed.hp = Math.round(world.starseed.maxHp * 0.92);
+  world.warden.hp = Math.round(world.warden.maxHp * 0.85);
+  const boss = createBoss(world, 'crown');
+  boss.hp = 1;
+  world.bossCleared(boss);
+  world.outcome = 'victory';
+  world.phase = 'over';
+  world.requestResults = 'victory';
+  app.best = { score: 48200, wave: 11 };
   endRun(app);
   app.screen = SCREEN.results;
   app.screenTime = 2.4;
@@ -645,6 +684,9 @@ export function stageShot(name, app) {
       break;
     case 'defeat':
       stageDefeat(app);
+      break;
+    case 'victory':
+      stageVictory(app);
       break;
     case 'title':
     default:

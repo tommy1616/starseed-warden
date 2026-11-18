@@ -36,16 +36,16 @@ function drawStats(ctx, app, x, y, w, h) {
   for (let i = 0; i < rows.length; i += 1) {
     const col = i % 2;
     const row = Math.floor(i / 2);
-    const cx = x + col * colWidth + 34;
-    const cy = y + 38 + row * 48;
+    const cx = x + col * colWidth + 30;
+    const cy = y + 26 + row * 41;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.font = '700 11px system-ui, sans-serif';
+    ctx.font = '700 10px system-ui, sans-serif';
     ctx.fillStyle = 'rgba(143,182,198,0.82)';
     ctx.fillText(rows[i][0], cx, cy);
-    ctx.font = '800 22px system-ui, sans-serif';
-    ctx.fillStyle = '#eafff8';
-    ctx.fillText(rows[i][1], cx, cy + 19);
+    ctx.font = i === 8 ? '800 18px system-ui, sans-serif' : '800 20px system-ui, sans-serif';
+    ctx.fillStyle = i === 8 && results.evolution ? '#b6ffe6' : '#eafff8';
+    ctx.fillText(rows[i][1], cx, cy + 17);
   }
 
   if (results.newBest) {
@@ -157,7 +157,7 @@ export function drawResults(ctx, app) {
   ctx.fillText(`${results.difficulty.toUpperCase()}  ·  ${results.victory ? 'VICTORY' : 'DEFEAT'}`, cx, 162);
   ctx.restore();
 
-  const starY = 210;
+  const starY = 204;
   for (let i = 0; i < 3; i += 1) {
     const delay = 0.3 + i * 0.16;
     const pop = easeOut((app.screenTime - delay) * 4.4);
@@ -176,8 +176,8 @@ export function drawResults(ctx, app) {
 
   ctx.save();
   ctx.globalAlpha = appear;
-  drawStats(ctx, app, 280, 258, 720, 214);
-  drawBuildSummary(ctx, app, 500);
+  drawStats(ctx, app, 260, 246, 760, 226);
+  drawBuildSummary(ctx, app, 498);
   ctx.restore();
 
   clearButtons(app.ui);

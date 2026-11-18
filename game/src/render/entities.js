@@ -243,6 +243,31 @@ function drawEnemyBody(ctx, world, enemy) {
 function drawBossBody(ctx, world, boss) {
   const time = world.time;
   const flash = boss.hitFlash > 0;
+  if (boss.type === 'bramble' && boss.state === 'windup') {
+    const pulse = 0.5 + 0.5 * Math.sin(time * 22);
+    const len = 460;
+    const endX = boss.x + Math.cos(boss.angle) * len;
+    const endY = boss.y + Math.sin(boss.angle) * len;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = `rgba(255,91,74,${0.12 + 0.1 * pulse})`;
+    ctx.lineWidth = boss.r * 1.65;
+    ctx.beginPath();
+    ctx.moveTo(boss.x, boss.y);
+    ctx.lineTo(endX, endY);
+    ctx.stroke();
+    ctx.strokeStyle = `rgba(255,155,130,${0.55 + 0.35 * pulse})`;
+    ctx.lineWidth = 2.4;
+    ctx.setLineDash([10, 12]);
+    ctx.lineDashOffset = -time * 90;
+    ctx.beginPath();
+    ctx.moveTo(boss.x, boss.y);
+    ctx.lineTo(endX, endY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
   ctx.save();
   ctx.translate(boss.x, boss.y);
   shadow(ctx, 0, 0, boss.r * 1.2);
@@ -442,6 +467,21 @@ function drawWarden(ctx, world, options = {}) {
   const bob = Math.sin((warden.walkPhase ?? 0) + time * 2) * 1.6;
   ctx.translate(0, bob);
 
+  if (warden.bloom >= PLAYER.bloomMax) {
+    const pulse = 0.5 + 0.5 * Math.sin(time * 6);
+    const readinessColor = world.evolution?.id === 'sporeward'
+      ? `rgba(126,200,255,${0.28 + 0.24 * pulse})`
+      : `rgba(255,215,106,${0.32 + 0.28 * pulse})`;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.strokeStyle = readinessColor;
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.arc(0, 0, warden.r + 9 + pulse * 4, 0, TAU);
+    ctx.stroke();
+    ctx.restore();
+  }
+
   const halo = ctx.createRadialGradient(0, 0, 2, 0, 0, warden.r * 3.6);
   halo.addColorStop(0, 'rgba(182,255,230,0.4)');
   halo.addColorStop(0.4, 'rgba(80,255,220,0.14)');
@@ -493,12 +533,12 @@ function drawWarden(ctx, world, options = {}) {
   ctx.restore();
 
   if (mods.orbit > 0) {
-    // The ring is drawn slightly wider than its hit radius; an evolution that widens or
-    // tightens the ring must move the drawing with it, or the choice would be invisible.
-    const ring = (world.evolution?.orbitRadius ?? 56) * (70 / 56);
+    // Draw the petal ring at its exact physical collision radius so hits match the visual edge.
+    const ring = world.evolution?.orbitRadius ?? 56;
+    const isClose = world.evolution?.id === 'closecut';
     ctx.save();
-    ctx.strokeStyle = 'rgba(143,247,200,0.14)';
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = isClose ? 'rgba(255,215,106,0.24)' : 'rgba(143,247,200,0.18)';
+    ctx.lineWidth = 1.2;
     ctx.setLineDash([4, 9]);
     ctx.lineDashOffset = -time * 20;
     ctx.beginPath();
@@ -513,11 +553,11 @@ function drawWarden(ctx, world, options = {}) {
       ctx.save();
       ctx.translate(px, py);
       ctx.rotate(angle + time * 2);
-      ctx.fillStyle = 'rgba(170,255,214,0.98)';
+      ctx.fillStyle = isClose ? 'rgba(255,222,126,0.98)' : 'rgba(170,255,214,0.98)';
       ctx.beginPath();
       ctx.ellipse(0, 0, 12, 6, 0, 0, TAU);
       ctx.fill();
-      glow(ctx, 0, 0, 16, 'rgba(143,247,200,0.32)');
+      glow(ctx, 0, 0, 16, isClose ? 'rgba(255,215,106,0.34)' : 'rgba(143,247,200,0.32)');
       ctx.restore();
     }
   }
@@ -562,15 +602,26 @@ function drawPickups(ctx, world) {
 function drawProjectiles(ctx, world) {
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
+  const longLance = world.evolution?.id === 'longdraw';
   for (const dart of world.darts) {
     ctx.save();
     ctx.translate(dart.x, dart.y);
     ctx.rotate(Math.atan2(dart.vy, dart.vx));
-    ctx.fillStyle = 'rgba(169,255,232,0.9)';
+    const bodyFill = dart.frost > 0
+      ? 'rgba(143,216,255,0.92)'
+      : dart.chain > 0
+        ? 'rgba(126,232,255,0.94)'
+        : dart.homing > 0
+          ? 'rgba(182,255,190,0.92)'
+          : 'rgba(169,255,232,0.9)';
+    const coreFill = dart.heavy > 0 ? '#ffe9a8' : '#eafff8';
+    const rx = dart.r * (longLance ? 3.2 : 2.6);
+    const ry = dart.r * (dart.heavy > 0 ? 0.74 : 0.62);
+    ctx.fillStyle = bodyFill;
     ctx.beginPath();
-    ctx.ellipse(0, 0, dart.r * 2.6, dart.r * 0.62, 0, 0, TAU);
+    ctx.ellipse(0, 0, rx, ry, 0, 0, TAU);
     ctx.fill();
-    ctx.fillStyle = '#eafff8';
+    ctx.fillStyle = coreFill;
     ctx.beginPath();
     ctx.arc(dart.r * 0.6, 0, dart.r * 0.52, 0, TAU);
     ctx.fill();
