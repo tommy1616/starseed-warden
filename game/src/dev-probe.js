@@ -25,6 +25,19 @@ export function createProbe(app) {
       const oath = app.world ? app.world.oath : null;
       return oath ? { id: oath.id, status: oath.status, progress: oath.progress, wave: oath.wave } : null;
     },
+    get evolution() {
+      const evolution = app.world ? app.world.evolution : null;
+      return evolution ? { ...evolution } : null;
+    },
+    get evolutionScreen() {
+      if (app.screen !== SCREEN.evolve || !app.evolution) return null;
+      return {
+        focus: app.evolution.focus,
+        chosen: app.evolution.chosen,
+        ids: app.evolution.choices.map((choice) => choice.id),
+      };
+    },
+    get evolutionWave() { return app.world ? app.world.evolutionWave : 0; },
     get draft() {
       return app.draft ? { oathId: app.draft.oathId, focus: app.draft.focus, cards: app.draft.cards.length } : null;
     },
@@ -56,6 +69,7 @@ export function createProbe(app) {
       return best;
     },
     get enemies() { return app.world ? app.world.enemies.length : 0; },
+    get darts() { return app.world ? app.world.darts.length : 0; },
     get boss() {
       return app.world && app.world.boss
         ? { name: app.world.boss.name, hp: app.world.boss.hp, maxHp: app.world.boss.maxHp, phase: app.world.boss.phase, state: app.world.boss.state, x: app.world.boss.x, y: app.world.boss.y }
@@ -105,6 +119,24 @@ export function createDebug(app) {
     },
     addScore(amount) {
       if (app.world) app.world.score.score += Number(amount) || 0;
+    },
+    /** Test shortcut: flatten the current wave so the real clear → draft → next-wave flow runs. */
+    clearWave() {
+      if (!app.world || app.screen !== SCREEN.play) return false;
+      const world = app.world;
+      for (const enemy of world.enemies) enemy.dead = true;
+      world.enemies.length = 0;
+      world.spawnQueue.length = 0;
+      world.pendingBoss = null;
+      if (world.boss) {
+        world.boss.dead = true;
+        world.boss = null;
+      }
+      if (world.phase === 'banner') {
+        world.phase = 'active';
+        world.bannerTimer = 0;
+      }
+      return true;
     },
   };
 }

@@ -2,8 +2,9 @@
 import { STEP } from './config.js';
 import { createWorld } from './world.js';
 import { createBoss } from './bosses.js';
-import { openDraft, pickDraft, endRun, dispatch, SCREEN } from './state.js';
+import { openDraft, pickDraft, endRun, dispatch, SCREEN, openEvolution } from './state.js';
 import { upgradeById, takeUpgrade } from './upgrades.js';
+import { applyEvolution, evolutionById, evolutionsFor } from './evolutions.js';
 import { bulletRing, spawnHazard, spawnBullet } from './projectiles.js';
 import { addRing, burst } from './particles.js';
 
@@ -501,8 +502,77 @@ function stageOath(app) {
   app.screenTime = 2;
 }
 
-function stageDefeat(app) {
+/** The wave-5 fork screen for the guardian in ?guardian=, fully drawn as the player sees it. */
+function stageEvolution(app) {
   prepareWorld(app);
+  const world = app.world;
+  applyCards(world, ['rapid', 'vitality', 'magnet']);
+  world.wave = 5;
+  world.biomeIndex = 1;
+  world.phase = 'active';
+  world.bannerTimer = 0;
+  world.spawnQueue = [];
+  world.enemies.length = 0;
+  world.bullets.length = 0;
+  world.hazards.length = 0;
+  world.pendingBoss = null;
+  world.boss = null;
+  world.starseed.hp = world.starseed.maxHp;
+  world.warden.hp = world.warden.maxHp;
+  world.runTime = 188;
+  world.score.score = 16420;
+  world.score.kills = 96;
+  world.score.shots = 402;
+  world.score.hits = 286;
+  world.score.comboBest = 18;
+  openEvolution(app);
+  if (app.evolution) {
+    app.evolution.time = 1.6;
+    app.evolution.focus = 0;
+  }
+  app.screenTime = 1.2;
+}
+
+/** A wave-5 fight after the evolution named in ?evo=, staged with the usual crowd. */
+function stageEvolved(app) {
+  prepareWorld(app);
+  const world = app.world;
+  const choice = evolutionById(app.shotEvolution ?? '') ?? evolutionsFor(app.guardianId)[0];
+  applyCards(world, ['rapid', 'pierce', 'vitality']);
+  if (choice) applyEvolution(world, choice);
+  world.wave = 5;
+  world.biomeIndex = 1;
+  world.phase = 'active';
+  world.bannerTimer = 0;
+  world.pendingBoss = null;
+  world.spawnQueue = [];
+  world.enemies.length = 0;
+  world.runTime = 196;
+  world.score.score = 17280;
+  world.score.kills = 104;
+  world.score.shots = 438;
+  world.score.hits = 312;
+  world.score.comboBest = 19;
+  dressPlayScene(world);
+  const aim = { moveX: 0, moveY: 0, aimX: 900, aimY: 270, firing: true, dash: false, bloom: false };
+  stepWorld(app, 0.9, { keepAlive: true, control: () => aim });
+  world.outcome = null;
+  world.requestResults = null;
+  world.phase = 'active';
+  world.starseed.hp = world.starseed.maxHp;
+  world.warden.hp = world.warden.maxHp;
+  world.warden.aimX = 900;
+  world.warden.aimY = 270;
+  world.warden.aimAngle = Math.atan2(270 - world.warden.y, 900 - world.warden.x);
+  world.camera.flash = 0;
+  world.camera.hitStop = 0;
+  world.score.combo = Math.max(world.score.combo, 13);
+  world.score.comboTimer = 2.3;
+  app.screen = SCREEN.play;
+  app.screenTime = 2;
+}
+
+function stageDefeat(app) {  prepareWorld(app);
   applyCards(app.world, ['spread', 'rapid', 'frost', 'vitality', 'magnet']);
   const world = app.world;
   world.wave = 6;
@@ -566,6 +636,12 @@ export function stageShot(name, app) {
       break;
     case 'oath':
       stageOath(app);
+      break;
+    case 'evolve':
+      stageEvolution(app);
+      break;
+    case 'evolved':
+      stageEvolved(app);
       break;
     case 'defeat':
       stageDefeat(app);

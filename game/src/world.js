@@ -14,6 +14,7 @@ import { dropPollen, updatePickups } from './pickups.js';
 import { buildWave, TOTAL_WAVES, biomeIndexForWave, waveTitle, BOSS_NAMES } from './waves.js';
 import { beginOath, updateOath, settleOath } from './oaths.js';
 import { applyGuardian } from './guardians.js';
+import { EVOLUTION_WAVE } from './evolutions.js';
 
 function createDecor(rng) {
   const fireflies = [];
@@ -181,6 +182,10 @@ export function createWorld(options) {
     oathBonus: 0,
     oath: null,
     oathNotice: null,
+    evolution: null,
+    evolutionNotice: null,
+    requestEvolution: false,
+    evolutionWave: EVOLUTION_WAVE,
     guardian: null,
     startingUpgrades: 0,
     biomeIndex: 0,
@@ -311,6 +316,8 @@ export function createWorld(options) {
     world.starseed.hp = Math.min(world.starseed.maxHp, world.starseed.hp + 6);
     startWave(world.wave + 1);
     beginOath(world, oathId);
+    // One fork per run: the first boss has just fallen, so wave 5 asks once and never again.
+    if (world.wave === EVOLUTION_WAVE && !world.evolution) world.requestEvolution = true;
   };
 
   world.startRun = (guardianId = 'seedshot') => {
@@ -390,6 +397,10 @@ export function createWorld(options) {
     if (world.oathNotice) {
       world.oathNotice.timer -= dt;
       if (world.oathNotice.timer <= 0) world.oathNotice = null;
+    }
+    if (world.evolutionNotice) {
+      world.evolutionNotice.timer -= dt;
+      if (world.evolutionNotice.timer <= 0) world.evolutionNotice = null;
     }
 
     if (world.outcome) {

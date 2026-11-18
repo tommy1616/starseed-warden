@@ -30,6 +30,7 @@ function drawStats(ctx, app, x, y, w, h) {
     ['TIME IN THE GLADE', formatTime(results.time)],
     ['UPGRADES TAKEN', String(results.upgradesTaken)],
     ['BEST COMBO · OATHS KEPT', `${results.comboBest} · ${results.oathsCompleted ?? 0} kept (+${results.oathBonus ?? 0})`],
+    ['EVOLUTION', results.evolution ?? 'None — the base path'],
   ];
   const colWidth = w / 2;
   for (let i = 0; i < rows.length; i += 1) {

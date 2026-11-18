@@ -9,11 +9,13 @@ import { readBest, writeBest } from './storage.js';
 import { accuracy } from './scoring.js';
 import { ACTION } from './input.js';
 import { OATHS, oathById } from './oaths.js';
+import { evolutionsFor, applyEvolution } from './evolutions.js';
 
 export const SCREEN = {
   title: 'title',
   play: 'play',
   draft: 'draft',
+  evolve: 'evolve',
   paused: 'paused',
   results: 'results',
 };
@@ -34,6 +36,7 @@ export function createApp(options = {}) {
     runIndex: 0,
     best: readBest(difficulty.id),
     draft: null,
+    evolution: null,
     results: null,
     ui: createUi(),
     focusAction: 'play',
@@ -92,6 +95,7 @@ export function startRun(app) {
   app.screen = SCREEN.play;
   app.previousScreen = SCREEN.play;
   app.draft = null;
+  app.evolution = null;
   app.results = null;
   app.focusAction = 'play';
   app.screenTime = 0;
@@ -130,6 +134,35 @@ export function pickDraft(app, index) {
   app.screenTime = 0;
   app.focusAction = 'play';
   app.draft = null;
+}
+
+/** The wave-5 fork: two mutually exclusive evolutions for this guardian, chosen once per run. */
+export function openEvolution(app) {
+  if (!app.world) return;
+  app.world.requestEvolution = false;
+  if (app.world.evolution) return;
+  const choices = evolutionsFor(app.world.guardian?.id ?? app.guardianId);
+  if (choices.length === 0) return;
+  app.evolution = { choices, focus: 0, chosen: -1, time: 0 };
+  app.screen = SCREEN.evolve;
+  app.screenTime = 0;
+  app.focusAction = 'evolution:0';
+  app.announce('Guardian Evolution: choose one path for the rest of this run. The other closes.');
+}
+
+export function pickEvolution(app, index) {
+  if (!app.evolution || app.evolution.chosen >= 0) return;
+  const choice = app.evolution.choices[index];
+  if (!choice) return;
+  app.evolution.chosen = index;
+  app.evolution.focus = index;
+  const applied = applyEvolution(app.world, choice);
+  app.audio?.play(applied ? 'card' : 'select');
+  app.announce(applied ? `${choice.name} chosen. ${choice.cost}` : 'This run already has an evolution.');
+  app.screen = SCREEN.play;
+  app.screenTime = 0;
+  app.focusAction = 'play';
+  app.evolution = null;
 }
 
 export function pauseGame(app) {
@@ -194,6 +227,7 @@ export function endRun(app) {
     lostReason: world.lostReason,
     oathsCompleted: world.oathsCompleted,
     oathBonus: world.oathBonus,
+    evolution: world.evolution ? `${world.evolution.name} · ${world.evolution.kicker}` : null,
   };
   app.screen = SCREEN.results;
   app.screenTime = 0;
@@ -235,6 +269,14 @@ export function cycleFocus(app, delta) {
     app.audio?.play('select');
     return;
   }
+  if (app.screen === SCREEN.evolve && app.evolution) {
+    const count = app.evolution.choices.length;
+    const current = Math.max(0, app.evolution.focus);
+    app.evolution.focus = (current + delta + count) % count;
+    app.focusAction = `evolution:${app.evolution.focus}`;
+    app.audio?.play('select');
+    return;
+  }
   const list = FOCUS[app.screen];
   if (!list) return;
   let index = list.indexOf(app.focusAction);
@@ -267,6 +309,8 @@ export function dispatch(app, action) {
     setGuardian(app, action.slice(9));
   } else if (action.startsWith('card:')) {
     pickDraft(app, Number(action.slice(5)));
+  } else if (action.startsWith('evolution:')) {
+    pickEvolution(app, Number(action.slice(10)));
   } else if (action.startsWith('oath:') && app.screen === SCREEN.draft && app.draft) {
     app.draft.oathId = oathById(action.slice(5)).id;
     app.focusAction = 'card:0';
@@ -325,6 +369,15 @@ export function handleActions(app, actions) {
       handled = true;
     }
   }
+  if (app.screen === SCREEN.evolve && app.evolution) {
+    if (actions & ACTION.card1) {
+      pickEvolution(app, 0);
+      handled = true;
+    } else if (actions & ACTION.card2) {
+      pickEvolution(app, 1);
+      handled = true;
+    }
+  }
   if (app.screen === SCREEN.title) {
     if (actions & ACTION.card1) setDifficulty(app, 'sprout');
     else if (actions & ACTION.card2) setDifficulty(app, 'warden');
@@ -350,6 +403,10 @@ export function updateApp(app, dt) {
     if (app.draft) app.draft.time += dt;
     return;
   }
+  if (app.screen === SCREEN.evolve) {
+    if (app.evolution) app.evolution.time += dt;
+    return;
+  }
   if (app.screen === SCREEN.results) return;
   if (!world) return;
   if (world.outcome && world.requestResults) {
@@ -359,6 +416,16 @@ export function updateApp(app, dt) {
   if (world.requestDraft) {
     app.shotDraftOptions = app.shotDraftOptions ?? null;
     openDraft(app);
+    return;
+  }
+  if (world.requestEvolution) {
+    if (app.shotMode) {
+      // Staged scenes must never stall on a menu: topic scenes take the first path silently.
+      applyEvolution(world, evolutionsFor(world.guardian?.id ?? app.guardianId)[0]);
+      world.requestEvolution = false;
+    } else {
+      openEvolution(app);
+    }
   }
 }
 

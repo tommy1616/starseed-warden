@@ -28,11 +28,13 @@ function aimVector(control, warden) {
 function fireVolley(world, control) {
   const warden = world.warden;
   const mods = world.mods;
+  const evolution = world.evolution;
   const aim = aimVector(control, warden);
-  const count = 1 + mods.multishot;
+  const count = 1 + mods.multishot + (evolution?.extraDarts ?? 0);
   const spread = count === 1 ? 0 : 0.09 + (count - 1) * 0.035;
-  const damage = PLAYER.dartDamage * (1 + 0.28 * mods.heavy) * (world.guardian?.dart ?? 1);
+  const damage = PLAYER.dartDamage * (1 + 0.28 * mods.heavy) * (world.guardian?.dart ?? 1) * (evolution?.dartDamage ?? 1);
   const radius = PLAYER.dartRadius * (1 + 0.1 * mods.heavy);
+  const speed = PLAYER.dartSpeed * (evolution?.dartSpeed ?? 1);
   for (let i = 0; i < count; i += 1) {
     const offset = count === 1 ? 0 : (i / (count - 1) - 0.5) * spread * 2;
     const angle = aim.angle + offset;
@@ -40,7 +42,8 @@ function fireVolley(world, control) {
     spawnDart(world, warden.x + Math.cos(angle) * muzzle, warden.y + Math.sin(angle) * muzzle, angle, {
       damage,
       radius,
-      pierce: mods.pierce,
+      speed,
+      pierce: mods.pierce + (evolution?.pierce ?? 0),
       homing: mods.homing,
       frost: mods.frost,
       chain: mods.chain,
@@ -59,7 +62,7 @@ function fireVolley(world, control) {
     }
   }
   registerShot(world.score);
-  warden.fireTimer = PLAYER.fireInterval * (world.guardian?.fire ?? 1) / (1 + 0.16 * mods.rapid);
+  warden.fireTimer = PLAYER.fireInterval * (world.guardian?.fire ?? 1) * (evolution?.fireInterval ?? 1) / (1 + 0.16 * mods.rapid);
   world.audio?.play('shoot');
   warden.recoil = 0.08;
 }
@@ -139,8 +142,9 @@ function checkPerfectDash(world) {
 function releaseBloom(world) {
   const warden = world.warden;
   const mods = world.mods;
-  const radius = PLAYER.bloomRadius * (1 + 0.15 * mods.bloomPower);
-  const damage = PLAYER.bloomDamage * (1 + 0.35 * mods.bloomPower);
+  const evolution = world.evolution;
+  const radius = PLAYER.bloomRadius * (1 + 0.15 * mods.bloomPower) * (evolution?.bloomRadius ?? 1);
+  const damage = PLAYER.bloomDamage * (1 + 0.35 * mods.bloomPower) * (evolution?.bloomDamage ?? 1);
   warden.bloom = 0;
   warden.bloomLock = PLAYER.bloomCooldown;
   world.damageInRadius(warden.x, warden.y, radius, damage, { crit: false });
@@ -152,8 +156,8 @@ function releaseBloom(world) {
     if (distance < radius + enemy.r) {
       enemy.x += (dx / distance) * 34;
       enemy.y += (dy / distance) * 34;
-      enemy.slowTimer = Math.max(enemy.slowTimer, 1.1);
-      enemy.slowFactor = Math.min(enemy.slowFactor, 0.6);
+      enemy.slowTimer = Math.max(enemy.slowTimer, evolution?.bloomSlow ?? 1.1);
+      enemy.slowFactor = Math.min(enemy.slowFactor, evolution?.bloomSlowFactor ?? 0.6);
     }
   }
   let destroyed = 0;
@@ -196,7 +200,8 @@ function updatePassives(world, dt) {
     world.petalTimer -= dt;
     if (world.petalTimer <= 0) {
       world.petalTimer = 0.22;
-      const radius = 56;
+      const radius = world.evolution?.orbitRadius ?? 56;
+      const cut = world.evolution?.orbitDamage ?? 1;
       for (let p = 0; p < mods.orbit; p += 1) {
         const angle = warden.orbitAngle + (p / mods.orbit) * TAU;
         const px = warden.x + Math.cos(angle) * radius;
@@ -205,14 +210,14 @@ function updatePassives(world, dt) {
           if (enemy.dead || enemy.burrowed || enemy.orbitCooldown > 0) continue;
           if (Math.hypot(enemy.x - px, enemy.y - py) < enemy.r + 11) {
             enemy.orbitCooldown = 0.3;
-            world.damageEnemy(enemy, 7 * mods.orbit * (1 + world.wave * 0.03), {});
+            world.damageEnemy(enemy, 7 * mods.orbit * cut * (1 + world.wave * 0.03), {});
             addParticle(world.particles, px, py, 0, -20, 0.25, 3, '#8ff7c8', { drag: 3 });
           }
         }
         if (world.boss && !world.boss.dead && Math.hypot(world.boss.x - px, world.boss.y - py) < world.boss.r + 11) {
           if ((world.boss.orbitCooldown ?? 0) <= 0) {
             world.boss.orbitCooldown = 0.3;
-            world.damageEnemy(world.boss, 7 * mods.orbit, { silent: true });
+            world.damageEnemy(world.boss, 7 * mods.orbit * cut, { silent: true });
           }
         }
       }

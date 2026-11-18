@@ -1,6 +1,7 @@
 // Boot, the fixed-step loop and the shot/debug entry points.
 import { drawHud } from './render/hud.js';
 import { drawDraft } from './render/draft.js';
+import { drawEvolution } from './render/evolve.js';
 import { drawResults } from './render/results.js';
 import { createApp, SCREEN, updateApp, handleActions, dispatch, pauseGame } from './state.js';
 import { STEP } from './config.js';
@@ -32,7 +33,8 @@ const difficultyId = params.get('difficulty') ?? 'warden';
 const canvas = document.getElementById('game');
 const status = document.getElementById('status');
 const audio = isShot ? null : createAudio();
-const app = createApp({ seed, difficultyId, audio, shotMode: isShot });
+const app = createApp({ seed, difficultyId, audio, shotMode: isShot, guardianId: params.get('guardian') ?? 'seedshot' });
+app.shotEvolution = params.get('evo');
 app.announce = (message) => {
   if (status) status.textContent = message;
 };
@@ -109,6 +111,9 @@ function drawFrame() {
   else if (app.screen === SCREEN.draft) {
     drawWorldBackdrop(ctx, app, 0.45, { aim: false });
     drawDraft(ctx, app);
+  } else if (app.screen === SCREEN.evolve) {
+    drawWorldBackdrop(ctx, app, 0.5, { aim: false });
+    drawEvolution(ctx, app);
   } else if (app.screen === SCREEN.paused) drawPause(ctx, app);
   else if (app.screen === SCREEN.results) {
     drawWorldBackdrop(ctx, app, 0.4, { warden: false, projectiles: false, aim: false });

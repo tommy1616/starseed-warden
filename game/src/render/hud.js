@@ -69,7 +69,12 @@ function drawWardenPanel(ctx, world) {
   const h = 72;
   panel(ctx, x, y, w, h, { fill: 'rgba(6,16,28,0.94)', edge: 'rgba(126,232,255,0.22)', radius: 14 });
   heart(ctx, x + 24, y + 27, 20, COLORS.hp);
-  label(ctx, world.guardian ? `WARDEN · ${world.guardian.name.toUpperCase()}` : 'WARDEN', x + 42, y + 20, 13, 'rgba(234,255,248,0.75)', 'left', 800);
+  const guardianName = world.guardian ? world.guardian.name.toUpperCase() : 'WARDEN';
+  if (world.evolution) {
+    label(ctx, `${guardianName} · ${world.evolution.name.toUpperCase()}`, x + 42, y + 20, 11.5, world.evolution.color ?? '#ffd76a', 'left', 800);
+  } else {
+    label(ctx, `WARDEN · ${guardianName}`, x + 42, y + 20, 13, 'rgba(234,255,248,0.75)', 'left', 800);
+  }
   const fraction = warden.hp / warden.maxHp;
   bar(ctx, x + 42, y + 34, 220, 12, fraction, fraction < 0.3 ? '#ff5b4a' : '#ff6b8a', 'rgba(255,107,138,0.16)', fraction < 0.3 ? 10 : 0);
   label(ctx, `${Math.ceil(warden.hp)} / ${Math.round(warden.maxHp)}`, x + 42, y + 56, 12, 'rgba(234,255,248,0.72)', 'left', 600);
@@ -296,6 +301,13 @@ function drawOathPanel(ctx, world) {
     ctx.globalAlpha = Math.min(1, notice.timer * 1.8);
     panel(ctx, x, y + 97, w, 30, { fill: 'rgba(5,14,28,0.9)', edge: notice.color, radius: 10 });
     label(ctx, notice.text, x + w / 2, y + 113, 11.5, notice.color, 'center', 800);
+    ctx.globalAlpha = 1;
+  }
+  const evolved = world.evolutionNotice;
+  if (evolved) {
+    ctx.globalAlpha = Math.min(1, evolved.timer * 1.8);
+    panel(ctx, x, y + 133, w, 30, { fill: 'rgba(5,14,28,0.9)', edge: evolved.color, radius: 10 });
+    label(ctx, evolved.text, x + w / 2, y + 149, 11.5, evolved.color, 'center', 800);
   }
   ctx.restore();
 }

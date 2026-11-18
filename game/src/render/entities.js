@@ -493,20 +493,23 @@ function drawWarden(ctx, world, options = {}) {
   ctx.restore();
 
   if (mods.orbit > 0) {
+    // The ring is drawn slightly wider than its hit radius; an evolution that widens or
+    // tightens the ring must move the drawing with it, or the choice would be invisible.
+    const ring = (world.evolution?.orbitRadius ?? 56) * (70 / 56);
     ctx.save();
     ctx.strokeStyle = 'rgba(143,247,200,0.14)';
     ctx.lineWidth = 1;
     ctx.setLineDash([4, 9]);
     ctx.lineDashOffset = -time * 20;
     ctx.beginPath();
-    ctx.arc(0, 0, 70, 0, TAU);
+    ctx.arc(0, 0, ring, 0, TAU);
     ctx.stroke();
     ctx.setLineDash([]);
     ctx.restore();
     for (let i = 0; i < mods.orbit; i += 1) {
       const angle = warden.orbitAngle + (i / mods.orbit) * TAU;
-      const px = Math.cos(angle) * 70;
-      const py = Math.sin(angle) * 70;
+      const px = Math.cos(angle) * ring;
+      const py = Math.sin(angle) * ring;
       ctx.save();
       ctx.translate(px, py);
       ctx.rotate(angle + time * 2);
